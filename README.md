@@ -5,7 +5,7 @@ Triton and CUDA kernels for the slow parts of LLM decoding: fused RMSNorm, fused
 swapped into Qwen2.5-1.5B.
 
 <!-- gen:headline -->
-_Headline pending: results not in yet._
+**4-bit decode matmul reaches 66% of peak memory bandwidth on L4, for 1.82x faster decoding than fp16 on Qwen2.5-1.5B.**
 <!-- /gen:headline -->
 
 ![How the 4-bit matmul works](assets/explainer.gif)
@@ -23,6 +23,10 @@ _Headline pending: results not in yet._
 <!-- gen:e2e -->
 | GPU | Backend | Decode tok/s (batch 1) | Swapped layers, ms/token | Prefill tok/s (T=2048) | WikiText-2 ppl | Linear weights |
 |---|---|---|---|---|---|---|
+| L4 | fp16 | 57.9 | 11.47 | 11886 | 10.654 | 2.62 GB |
+| L4 | ours | 105.5 | 3.94 | 11592 | 11.900 | 0.70 GB |
+| L4 | ours_cuda | 109.0 | 3.72 | 11751 | 11.900 | 0.70 GB |
+| L4 | w4_ref | - | - | - | 11.901 | 0.70 GB |
 <!-- /gen:e2e -->
 
 ### 4-bit matmul (W4A16)
@@ -30,12 +34,15 @@ _Headline pending: results not in yet._
 <!-- gen:w4a16 -->
 | Layer (N x K) | M | GPU | Triton (us) | CUDA (us) | fp16 cuBLAS (us) | torchao (us) | torch.compile (us) | Triton vs fp16 | Triton % peak BW |
 |---|---|---|---|---|---|---|---|---|---|
-| qwen_gate_up (17920x1536) | 1 | L4 | 68.4 | - | 208.6 | 79.0 | 82.6 | 3.05x | 71% |
-| qwen_gate_up (17920x1536) | 16 | L4 | 81.3 | - | 218.1 | 149.3 | 454.1 | 2.68x | 63% |
-| qwen_down (1536x8960) | 1 | L4 | 39.6 | - | 102.9 | 34.1 | 45.4 | 2.60x | 62% |
-| qwen_down (1536x8960) | 16 | L4 | 42.6 | - | 110.6 | 83.0 | 167.5 | 2.60x | 60% |
-| 8b_up (14336x4096) | 1 | L4 | 156.8 | - | 431.4 | 123.9 | 143.8 | 2.75x | 66% |
-| 8b_up (14336x4096) | 16 | L4 | 167.5 | - | 463.6 | 295.0 | 1155.6 | 2.77x | 63% |
+| qwen_gate_up (17920x1536) | 1 | L4 | 73.9 | 67.3 | 209.3 | 79.2 | 83.1 | 2.83x | 66% |
+| qwen_gate_up (17920x1536) | 16 | L4 | 79.0 | 168.3 | 218.4 | 144.9 | 446.6 | 2.76x | 64% |
+| qwen_gate_up (17920x1536) | 2048 | L4 | 2572.1 | - | 2117.1 | 14494.4 | 2416.1 | 0.82x | 12% |
+| qwen_down (1536x8960) | 1 | L4 | 40.3 | 37.9 | 104.2 | 34.2 | 45.9 | 2.58x | 61% |
+| qwen_down (1536x8960) | 16 | L4 | 43.5 | 99.3 | 115.1 | 84.9 | 170.6 | 2.64x | 59% |
+| qwen_down (1536x8960) | 2048 | L4 | 1344.9 | - | 1282.4 | 8153.3 | 1478.8 | 0.95x | 12% |
+| 8b_up (14336x4096) | 1 | L4 | 158.1 | 133.0 | 430.7 | 123.7 | 148.2 | 2.72x | 66% |
+| 8b_up (14336x4096) | 16 | L4 | 168.0 | 343.7 | 481.3 | 296.1 | 1156.5 | 2.86x | 63% |
+| 8b_up (14336x4096) | 2048 | L4 | 5184.9 | - | 4574.0 | 28792.3 | 5305.3 | 0.88x | 7% |
 <!-- /gen:w4a16 -->
 
 ### Fused RMSNorm and SwiGLU
@@ -43,22 +50,22 @@ _Headline pending: results not in yet._
 <!-- gen:kernels -->
 | Kernel | Shape | GPU | Ours (us) | PyTorch eager (us) | torch.compile (us) | Speedup vs eager | % peak BW |
 |---|---|---|---|---|---|---|---|
-| RMSNorm + residual | N=4096, M=16384 | L4 | 2268.6 | 12036.1 | 2207.1 | 5.31x | 79% |
-| RMSNorm + residual | N=1536, M=1 | L4 | 1.3 | 10.3 | 1.3 | 7.80x | 4% |
-| SwiGLU | I=8960, M=4096 | L4 | 932.0 | 1559.8 | 878.8 | 1.67x | 79% |
-| SwiGLU | I=8960, M=1 | L4 | 1.1 | 2.7 | 1.0 | 2.44x | 16% |
+| RMSNorm + residual | N=4096, M=16384 | L4 | 2282.5 | 12019.0 | 2209.5 | 5.27x | 78% |
+| RMSNorm + residual | N=1536, M=1 | L4 | 1.3 | 10.3 | 1.3 | 7.79x | 4% |
+| SwiGLU | I=8960, M=4096 | L4 | 933.0 | 1561.5 | 941.1 | 1.67x | 79% |
+| SwiGLU | I=8960, M=1 | L4 | 1.1 | 2.7 | 1.0 | 2.43x | 16% |
 <!-- /gen:kernels -->
 
 Times are CUDA-graph medians of 3 sweeps, with enough rotating input copies that every call reads
 from DRAM (working set at least 4x the L2 cache).
 <!-- gen:spread -->
-Median spread between the 3 sweeps: 0.6%. 0 of 255 measurements spread more than 10% (marked in the site tables).
+Median spread between the 3 sweeps: 1.0%. 14 of 375 measurements spread more than 10% (marked in the site tables).
 <!-- /gen:spread -->
 
 ### Cost
 
 <!-- gen:cost -->
-Total GPU time: **0.42 GPU-hours**, estimated **$0.39** (cap $30), of which H100: 0 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
+Total GPU time: **1.12 GPU-hours**, estimated **$1.03** (cap $30), of which H100: 0 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
 <!-- /gen:cost -->
 
 ## Quickstart

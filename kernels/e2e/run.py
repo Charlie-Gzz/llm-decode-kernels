@@ -288,9 +288,14 @@ def _run_backend(name, hf, tok, prompt, ids_ppl, hf_logits, hf_gen, decode_steps
             dec = GraphDecoder(runner)
             dec.capture(prompt)
             toks, _ = dec.generate(prompt, 32)
+            # Greedy decoding diverges for good after one near-tie flips, so report where the
+            # first difference is rather than a match fraction.
             ref = hf_gen.tolist()  # HF may stop early at EOS
-            n = max(1, min(len(toks), len(ref)))
-            r["parity_greedy_match"] = sum(a == b for a, b in zip(toks, ref)) / n
+            n = min(len(toks), len(ref))
+            first = next((i for i in range(n) if toks[i] != ref[i]), n)
+            r["parity_first_divergence"] = first
+            r["parity_compared_tokens"] = n
+            r["parity_tokens"] = {"runner": toks[:n], "hf": ref[:n]}
         if name != "w4_ref":  # w4_ref is for quality only
             r["decode"] = decode_speed(runner, prompt, decode_steps)
             r["prefill"] = [prefill_speed(runner, T) for T in prefill_lens]

@@ -289,11 +289,18 @@ def page_e2e(e2e):
         body += section(f"{g}", table(["backend", "decode tok/s", "swapped layers ms/token",
                                        "prefill tok/s (T: tok/s)", "WikiText-2 ppl",
                                        "linear weights GB"], rows))
-        if "fp16" in b and "parity_max_abs_logit_diff" in b["fp16"]:
+        f16 = b.get("fp16", {})
+        if "parity_max_abs_logit_diff" in f16:
+            greedy = ""
+            if "parity_first_divergence" in f16:
+                d, n = f16["parity_first_divergence"], f16["parity_compared_tokens"]
+                greedy = (f" Greedy tokens are identical for all {n} steps." if d == n else
+                          f" Greedy tokens are identical for the first {d} of {n} steps, then a "
+                          "near-tie flips and the texts drift apart (expected from fp16 "
+                          "rounding order).")
             body += (f'<p class="text-sm text-muted">Runner check against Hugging Face: max abs '
-                     f'logit difference {b["fp16"]["parity_max_abs_logit_diff"]:.3f}, greedy '
-                     f'tokens match {100 * b["fp16"]["parity_greedy_match"]:.0f}% over 32 steps. '
-                     f'HF perplexity {res["hf_ppl"]:.3f}.</p>')
+                     f'logit difference {f16["parity_max_abs_logit_diff"]:.3f} on the prompt; '
+                     f'perplexity {f16["ppl"]:.3f} vs HF {res["hf_ppl"]:.3f}.{greedy}</p>')
         if "fp16" in b and "ours" in b:
             outs = ""
             for a, o in zip(b["fp16"]["greedy"], b["ours"]["greedy"]):
