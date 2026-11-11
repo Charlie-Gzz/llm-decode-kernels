@@ -15,7 +15,14 @@ import torch.nn.functional as F
 
 from kernels.bench import harness
 
-QUERY = "clocks.sm,clocks.mem,power.draw,power.limit,clocks_throttle_reasons.active"
+
+def _query() -> str:
+    """Newer drivers renamed clocks_throttle_reasons to clocks_event_reasons."""
+    help_text = subprocess.run(["nvidia-smi", "--help-query-gpu"], capture_output=True,
+                               text=True).stdout
+    reasons = ("clocks_event_reasons.active" if "clocks_event_reasons.active" in help_text
+               else "clocks_throttle_reasons.active")
+    return f"clocks.sm,clocks.mem,power.draw,power.limit,{reasons}"
 
 
 def _cases(N=17920, K=1536):
@@ -49,8 +56,9 @@ def _probe(fn, make, seconds: float) -> dict:
         fn(*args)
     torch.cuda.synchronize()
     graph, outs = harness.capture(lambda: [fn(*a) for a in sets])
-    smi = subprocess.Popen(["nvidia-smi", f"--query-gpu={QUERY}", "--format=csv,noheader,nounits",
-                            "-lms", "100"], stdout=subprocess.PIPE, text=True)
+    smi = subprocess.Popen(["nvidia-smi", f"--query-gpu={_query()}",
+                            "--format=csv,noheader,nounits", "-lms", "100"],
+                           stdout=subprocess.PIPE, text=True)
     replays, t0 = 0, time.time()
     start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
     start.record()
@@ -83,7 +91,8 @@ def _probe(fn, make, seconds: float) -> dict:
 def run(params: dict) -> dict:
     seconds = float(params.get("seconds", 4))
     out = {name: _probe(fn, make, seconds) for name, fn, make in _cases()}
-    idle = subprocess.run(["nvidia-smi", f"--query-gpu={QUERY}", "--format=csv,noheader,nounits"],
+    idle = subprocess.run(["nvidia-smi", f"--query-gpu={_query()}",
+                           "--format=csv,noheader,nounits"],
                           capture_output=True, text=True).stdout.strip()
     lines = [f"{k:8s} {v['us_per_call']:7.1f} us  sm {v['sm_clock_mhz']:.0f} MHz  "
              f"mem {v['mem_clock_mhz']:.0f} MHz  {v['power_w']:.0f}/{v['power_limit_w']:.0f} W  "
