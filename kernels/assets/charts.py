@@ -281,34 +281,45 @@ def bandwidth_bars(rows, gpu: str):
 
 # ----------------------------------------------------------------------------- triton vs cuda
 def triton_vs_cuda(rows, gpu: str):
+    """% of peak bandwidth per layer, batch 1 and batch 16 side by side."""
+    import numpy as np
+
     layers = [lab for lab, _, _ in _w4_shapes()]
-    groups = []
-    for layer in layers:
-        for M in (1, 16):
+    fig, axes = plt.subplots(1, 2, figsize=(8, 4.4), sharey=True)
+    med = {}
+    for ax, M in zip(axes, (1, 16)):
+        pairs = []
+        for layer in layers:
             t = data.one(rows, gpu=gpu, kernel="w4a16", impl="triton", layer=layer, M=M)
             c = data.one(rows, gpu=gpu, kernel="w4a16", impl="cuda", layer=layer, M=M)
             if t and c:
-                groups.append((f"{layer}\nM={M}", t["ms"] * 1e3, c["ms"] * 1e3))
-    if not groups:
-        return []
-    import numpy as np
-
-    fig, ax = plt.subplots(figsize=(8, 4.6))
-    x = np.arange(len(groups))
-    w = 0.38
-    for off, idx, impl in ((-w / 2, 1, "triton"), (w / 2, 2, "cuda")):
-        ax.bar(x + off, [g[idx] for g in groups], width=w, color=SERIES[impl]["color"],
-               label=SERIES[impl]["label"], edgecolor=ax.get_facecolor(), linewidth=2)
-    ax.set_xticks(x, [g[0] for g in groups], fontsize=8)
-    ax.set_ylabel("time per call (us), lower is better")
-    ax.legend(loc="upper left")
-    ratios = [g[1] / g[2] for g in groups]
-    med = statistics.median(ratios)
-    who = "CUDA C++" if med > 1 else "Triton"
-    ax.set_title(f"Decode matmul: {who} is {max(med, 1 / med):.2f}x faster (median over shapes)",
-                 fontsize=13)
+                pairs.append((layer, t["pct_peak_bw"], c["pct_peak_bw"]))
+        if not pairs:
+            return []
+        y = np.arange(len(pairs))
+        h = 0.38
+        for off, idx, impl in ((-h / 2, 1, "triton"), (h / 2, 2, "cuda")):
+            vals = [p[idx] for p in pairs]
+            ax.barh(y + off, vals, height=h, color=SERIES[impl]["color"],
+                    label=SERIES[impl]["label"], edgecolor=ax.get_facecolor(), linewidth=1.5)
+            for yy, v in zip(y + off, vals):
+                ax.text(v + 1, yy, f"{v:.0f}", va="center", color=TEXT, fontsize=8,
+                        family="JetBrains Mono")
+        ax.set_yticks(y, [p[0] for p in pairs])
+        ax.invert_yaxis()
+        ax.set_xlim(0, 100)
+        ax.grid(axis="y", visible=False)
+        ax.set_title(f"batch M = {M}", fontsize=11, color=MUTED, loc="left")
+        ax.set_xlabel("% of peak bandwidth")
+        med[M] = (statistics.median(p[1] for p in pairs), statistics.median(p[2] for p in pairs))
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper right", ncol=2, bbox_to_anchor=(0.99, 0.86))
+    (t1, c1), (t16, c16) = med[1], med[16]
+    fig.suptitle(f"Batch 1: CUDA C++ {c1:.0f}% vs Triton {t1:.0f}% of peak bandwidth.\n"
+                 f"Batch 16: Triton holds {t16:.0f}%, CUDA drops to {c16:.0f}% (medians)",
+                 x=0.012, ha="left", color=TEXT, fontsize=13, fontweight="semibold")
     footnote(fig, _gpu_note(gpu, "int4 weights, group 128"))
-    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    fig.tight_layout(rect=(0, 0.04, 1, 0.9))
     return _save(fig, f"triton_vs_cuda_{gpu.lower()}")
 
 
@@ -345,7 +356,7 @@ def decode_tokens(e2e: dict):
     ax.legend(loc="upper left")
     ax.grid(axis="x", visible=False)
     s = ", ".join(f"{sp:.2f}x on {g}" for g, sp in speedups)
-    ax.set_title(f"Qwen2.5-1.5B decodes {s} faster with 4-bit kernels", fontsize=13)
+    ax.set_title(f"Qwen2.5-1.5B decodes faster with 4-bit kernels: {s}", fontsize=13)
     footnote(fig, "batch 1 | CUDA graphs both sides | embeddings and lm_head stay fp16")
     fig.tight_layout(rect=(0, 0.04, 1, 1))
     return _save(fig, "decode_tokens")
