@@ -1,0 +1,361 @@
+"""Every chart, generated from results JSON (no GPU needed). PNG (1600 px wide) + SVG.
+
+Titles are computed from the data so they always state the current takeaway.
+"""
+
+from __future__ import annotations
+
+import statistics
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+from kernels import config  # noqa: E402
+from kernels.assets import data  # noqa: E402
+from kernels.assets.style import (  # noqa: E402
+    ACCENT,
+    MUTED,
+    ROOT,
+    SERIES,
+    TEXT,
+    footnote,
+    setup_matplotlib,
+)
+
+OUT = ROOT / "assets" / "charts"
+DPI = 200  # 8 in x 200 dpi = 1600 px
+
+# Approximate FLOPs per element for the memory-bound kernels (roofline x-position only).
+ELEMWISE_FLOPS = {"rmsnorm": 5, "swiglu": 5}
+
+
+def _save(fig, name: str) -> list:
+    OUT.mkdir(parents=True, exist_ok=True)
+    paths = [OUT / f"{name}.png", OUT / f"{name}.svg"]
+    fig.savefig(paths[0], dpi=DPI)
+    fig.savefig(paths[1])
+    plt.close(fig)
+    return paths
+
+
+def _fmt_x(n: int) -> str:
+    return f"{n // 1024}K" if n >= 1024 and n % 1024 == 0 else str(n)
+
+
+def _series_line(ax, xs, ys, impl, label_end=True):
+    s = SERIES[impl]
+    ax.plot(xs, ys, color=s["color"], marker=s["marker"], ls=s["ls"], label=s["label"],
+            markeredgecolor=ax.get_facecolor(), markeredgewidth=1.5, markersize=8)
+    if label_end and ys:
+        ax.annotate(s["label"], (xs[-1], ys[-1]), xytext=(8, 0), textcoords="offset points",
+                    color=TEXT, fontsize=9, va="center")
+
+
+def _gpu_note(gpu: str, extra: str) -> str:
+    return f"{gpu} | fp16 | CUDA-graph timing, median of 3 sweeps | {extra}"
+
+
+# ----------------------------------------------------------------------------- speedups
+def speedup_elementwise(rows, gpu: str, kernel: str, fixed: dict, x_key: str, base="eager"):
+    """Speedup of triton and torch.compile over eager, one panel per value of the other dim."""
+    panel_key = "N" if kernel == "rmsnorm" else "I"
+    panels = sorted({r["shape"][panel_key] for r in data.select(rows, gpu=gpu, kernel=kernel)})
+    if not panels:
+        return []
+    fig, axes = plt.subplots(1, len(panels), figsize=(8, 4.4), sharey=True, squeeze=False)
+    best = (0, None)
+    for ax, pv in zip(axes[0], panels):
+        sel = data.select(rows, gpu=gpu, kernel=kernel, **fixed, **{panel_key: pv})
+        xs = sorted({r["shape"][x_key] for r in sel})
+        for impl in ("triton", "compile"):
+            pts = []
+            for x in xs:
+                b = data.one(sel, impl=base, **{x_key: x})
+                r = data.one(sel, impl=impl, **{x_key: x})
+                if b and r:
+                    pts.append((x, b["ms"] / r["ms"]))
+                    if impl == "triton" and b["ms"] / r["ms"] > best[0]:
+                        best = (b["ms"] / r["ms"], x)
+            if pts:
+                _series_line(ax, [p[0] for p in pts], [p[1] for p in pts], impl, label_end=False)
+        ax.axhline(1, color=MUTED, lw=1, ls=":")
+        ax.set_xscale("log", base=2)
+        ax.set_xticks(xs, [_fmt_x(x) for x in xs])
+        ax.set_xlabel(f"rows {x_key} (tokens)")
+        ax.set_title(f"{panel_key} = {pv}", fontsize=11, color=MUTED, loc="left")
+    axes[0][0].set_ylabel(f"speedup vs {SERIES[base]['label']}")
+    axes[0][0].legend(loc="upper left")
+    name = "Fused RMSNorm + residual" if kernel == "rmsnorm" else "Fused SwiGLU"
+    fig.suptitle(f"{name} is up to {best[0]:.1f}x faster than PyTorch eager on {gpu}",
+                 x=0.012, ha="left", color=TEXT, fontsize=14, fontweight="semibold")
+    footnote(fig, _gpu_note(gpu, "higher is better"))
+    fig.tight_layout(rect=(0, 0.04, 1, 0.98))
+    return _save(fig, f"speedup_{kernel}_{gpu.lower()}")
+
+
+def speedup_w4a16(rows, gpu: str):
+    sel = data.select(rows, gpu=gpu, kernel="w4a16")
+    layers = []
+    for r in sel:
+        if r["shape"]["layer"] not in layers:
+            layers.append(r["shape"]["layer"])
+    if not layers:
+        return []
+    order = [lab for lab, _, _ in _w4_shapes() if lab in layers]
+    ncol = 3
+    nrow = (len(order) + ncol - 1) // ncol
+    fig, axes = plt.subplots(nrow, ncol, figsize=(8, 2.6 * nrow + 0.9), sharey=True,
+                             squeeze=False)
+    decode_speedups, prefill_speedups = [], []
+    for i, layer in enumerate(order):
+        ax = axes[i // ncol][i % ncol]
+        ls = data.select(sel, layer=layer)
+        xs = sorted({r["shape"]["M"] for r in ls})
+        for impl in ("triton", "cuda", "torchao", "compile", "naive"):
+            pts = []
+            for x in xs:
+                b, r = data.one(ls, impl="fp16", M=x), data.one(ls, impl=impl, M=x)
+                if b and r:
+                    pts.append((x, b["ms"] / r["ms"]))
+                    if impl == "triton":
+                        (decode_speedups if x <= 16 else prefill_speedups).append(pts[-1][1])
+            if pts:
+                _series_line(ax, [p[0] for p in pts], [p[1] for p in pts], impl, label_end=False)
+        ax.axhline(1, color=MUTED, lw=1, ls=":")
+        ax.set_xscale("log", base=2)
+        ax.set_xticks(xs, [_fmt_x(x) for x in xs], fontsize=8)
+        N, K = ls[0]["shape"]["N"], ls[0]["shape"]["K"]
+        ax.set_title(f"{layer}  {N}x{K}", fontsize=10, color=MUTED, loc="left")
+        if i % ncol == 0:
+            ax.set_ylabel("speedup vs fp16")
+        if i // ncol == nrow - 1:
+            ax.set_xlabel("batch rows M")
+    for j in range(len(order), nrow * ncol):
+        axes[j // ncol][j % ncol].axis("off")
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", ncol=len(labels), bbox_to_anchor=(0.5, 0.93),
+               fontsize=9)
+    dmed = statistics.median(decode_speedups) if decode_speedups else 0
+    pmed = statistics.median(prefill_speedups) if prefill_speedups else 0
+    verdict = "but loses to cuBLAS at prefill" if pmed < 1 else "and still wins at prefill"
+    fig.suptitle(f"4-bit Triton matmul: {dmed:.1f}x faster than fp16 at decode (median), "
+                 f"{verdict}", x=0.012, ha="left", color=TEXT, fontsize=13,
+                 fontweight="semibold")
+    footnote(fig, _gpu_note(gpu, "group size 128 | higher is better"))
+    fig.tight_layout(rect=(0, 0.04, 1, 0.88))
+    return _save(fig, f"speedup_w4a16_{gpu.lower()}")
+
+
+def _w4_shapes():
+    from kernels.bench.sweep import W4_SHAPES
+
+    return W4_SHAPES
+
+
+# ----------------------------------------------------------------------------- roofline
+def _points(rows, gpu):
+    """Representative point per kernel: (label, impl, row, flops)."""
+    pts = []
+
+    def add(label, impl, row, flops=None):
+        if row:
+            pts.append((label, impl, row, flops if flops is not None else row["flops"]))
+
+    big_n = max((r["shape"]["N"] for r in data.select(rows, gpu=gpu, kernel="rmsnorm")),
+                default=None)
+    if big_n:
+        r = max(data.select(rows, gpu=gpu, kernel="rmsnorm", impl="triton", residual=True,
+                            N=big_n), key=lambda r: r["shape"]["M"], default=None)
+        if r:
+            add("RMSNorm+res", "triton", r,
+                ELEMWISE_FLOPS["rmsnorm"] * r["shape"]["M"] * r["shape"]["N"])
+    sw = max(data.select(rows, gpu=gpu, kernel="swiglu", impl="triton"),
+             key=lambda r: r["shape"]["M"] * r["shape"]["I"], default=None)
+    if sw:
+        add("SwiGLU", "triton", sw, ELEMWISE_FLOPS["swiglu"] * sw["shape"]["M"] * sw["shape"]["I"])
+    for M in (1, 16, 2048):
+        add(f"W4A16 M={M}", "triton", data.one(rows, gpu=gpu, kernel="w4a16", impl="triton",
+                                               layer="8b_up", M=M))
+        add(f"fp16 M={M}", "fp16", data.one(rows, gpu=gpu, kernel="w4a16", impl="fp16",
+                                            layer="8b_up", M=M))
+    add("W4A16 CUDA M=1", "cuda", data.one(rows, gpu=gpu, kernel="w4a16", impl="cuda",
+                                          layer="8b_up", M=1))
+    return pts
+
+
+def roofline(rows, gpu: str):
+    import numpy as np
+
+    spec = config.GPU_SPECS[gpu]
+    pts = _points(rows, gpu)
+    if not pts:
+        return []
+    fig, ax = plt.subplots(figsize=(8, 5))
+    bw, peak = spec["peak_gbps"] * 1e9, spec["peak_fp16_tflops"] * 1e12
+    xs = np.logspace(-1, 4, 200)
+    roof = np.minimum(bw * xs, peak) / 1e12
+    ax.plot(xs, roof, color=MUTED, lw=1.5)
+    ridge = peak / bw
+    ax.annotate(f"memory roof {spec['peak_gbps']:.0f} GB/s", (0.3, bw * 0.3 / 1e12),
+                xytext=(0, 10), textcoords="offset points", color=MUTED, fontsize=9, rotation=0)
+    ax.annotate(f"fp16 tensor roof {spec['peak_fp16_tflops']:.0f} TFLOPS", (ridge * 1.5,
+                peak / 1e12), xytext=(0, 6), textcoords="offset points", color=MUTED, fontsize=9)
+    best = None
+    for label, impl, r, flops in pts:
+        intensity = flops / r["bytes"]
+        tflops = flops / (r["ms"] * 1e-3) / 1e12
+        s = SERIES[impl]
+        hollow = impl == "fp16"
+        ax.scatter([intensity], [tflops], s=70, marker=s["marker"],
+                   facecolors="none" if hollow else s["color"], edgecolors=s["color"],
+                   linewidths=1.6, zorder=3)
+        ax.annotate(label, (intensity, tflops), xytext=(7, -3), textcoords="offset points",
+                    color=TEXT if not hollow else MUTED, fontsize=9)
+        if label == "W4A16 M=1":
+            best = 100 * (r["bytes"] / (r["ms"] * 1e-3)) / bw
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel("arithmetic intensity (FLOP per byte of DRAM traffic)")
+    ax.set_ylabel("achieved TFLOPS")
+    ax.set_xlim(0.1, 1e4)
+    title = f"Decode kernels sit on the memory roof of the {gpu}"
+    if best:
+        title += f": W4A16 at batch 1 reaches {best:.0f}% of peak bandwidth"
+    ax.set_title(title, fontsize=13)
+    footnote(fig, f"{gpu} | fp16 | filled = ours, hollow = fp16 cuBLAS | matmul shape 14336x4096 "
+                  "| elementwise FLOPs approximate")
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    return _save(fig, f"roofline_{gpu.lower()}")
+
+
+# ----------------------------------------------------------------------------- % of peak bw
+def bandwidth_bars(rows, gpu: str):
+    spec = config.GPU_SPECS[gpu]
+    bars = []
+    copy = data.one(rows, gpu=gpu, kernel="copy")
+    for label, impl, r, _ in _points(rows, gpu):
+        if impl != "fp16" and "2048" not in label:
+            bars.append((label, impl, r["pct_peak_bw"]))
+    for layer in ("qwen_gate_up", "qwen_down"):
+        r = data.one(rows, gpu=gpu, kernel="w4a16", impl="triton", layer=layer, M=1)
+        if r:
+            bars.append((f"W4A16 {layer[5:]} M=1", "triton", r["pct_peak_bw"]))
+    if not bars:
+        return []
+    bars.sort(key=lambda b: b[2])
+    fig, ax = plt.subplots(figsize=(8, 0.5 * len(bars) + 1.6))
+    ys = range(len(bars))
+    ax.barh(list(ys), [b[2] for b in bars], color=[SERIES[b[1]]["color"] for b in bars],
+            height=0.62, edgecolor=ax.get_facecolor(), linewidth=2)
+    for y, b in zip(ys, bars):
+        ax.text(b[2] + 1, y, f"{b[2]:.0f}%", va="center", color=TEXT, fontsize=10,
+                family="JetBrains Mono")
+    ax.set_yticks(list(ys), [b[0] for b in bars])
+    if copy:
+        ax.axvline(copy["pct_peak_bw"], color=ACCENT, ls="--", lw=1.2)
+        ax.text(copy["pct_peak_bw"], len(bars) - 0.4, f" device copy {copy['pct_peak_bw']:.0f}%",
+                color=MUTED, fontsize=9, va="bottom")
+    ax.set_xlim(0, 105)
+    ax.set_xlabel(f"% of {spec['peak_gbps']:.0f} GB/s spec-sheet bandwidth")
+    ax.grid(axis="y", visible=False)
+    top = bars[-1]
+    ax.set_title(f"{top[0]} moves data at {top[2]:.0f}% of the {gpu}'s peak bandwidth",
+                 fontsize=13)
+    footnote(fig, f"{gpu} | fp16 | minimum bytes / time | dashed = plain device-to-device copy")
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    return _save(fig, f"bandwidth_{gpu.lower()}")
+
+
+# ----------------------------------------------------------------------------- triton vs cuda
+def triton_vs_cuda(rows, gpu: str):
+    layers = [lab for lab, _, _ in _w4_shapes()]
+    groups = []
+    for layer in layers:
+        for M in (1, 16):
+            t = data.one(rows, gpu=gpu, kernel="w4a16", impl="triton", layer=layer, M=M)
+            c = data.one(rows, gpu=gpu, kernel="w4a16", impl="cuda", layer=layer, M=M)
+            if t and c:
+                groups.append((f"{layer}\nM={M}", t["ms"] * 1e3, c["ms"] * 1e3))
+    if not groups:
+        return []
+    import numpy as np
+
+    fig, ax = plt.subplots(figsize=(8, 4.6))
+    x = np.arange(len(groups))
+    w = 0.38
+    for off, idx, impl in ((-w / 2, 1, "triton"), (w / 2, 2, "cuda")):
+        ax.bar(x + off, [g[idx] for g in groups], width=w, color=SERIES[impl]["color"],
+               label=SERIES[impl]["label"], edgecolor=ax.get_facecolor(), linewidth=2)
+    ax.set_xticks(x, [g[0] for g in groups], fontsize=8)
+    ax.set_ylabel("time per call (us), lower is better")
+    ax.legend(loc="upper left")
+    ratios = [g[1] / g[2] for g in groups]
+    med = statistics.median(ratios)
+    who = "CUDA C++" if med > 1 else "Triton"
+    ax.set_title(f"Decode matmul: {who} is {max(med, 1 / med):.2f}x faster (median over shapes)",
+                 fontsize=13)
+    footnote(fig, _gpu_note(gpu, "int4 weights, group 128"))
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    return _save(fig, f"triton_vs_cuda_{gpu.lower()}")
+
+
+# ----------------------------------------------------------------------------- end to end
+def decode_tokens(e2e: dict):
+    names = [("fp16", "fp16", "fp16"), ("ours", "triton", "Ours (Triton)"),
+             ("ours_cuda", "cuda", "Ours (CUDA)")]
+    gpus = [g for g in ("L4", "H100") if g in e2e]
+    if not gpus:
+        return []
+    import numpy as np
+
+    fig, ax = plt.subplots(figsize=(8, 4.4))
+    present = [n for n in names if any(n[0] in e2e[g]["backends"] and
+                                       "decode" in e2e[g]["backends"][n[0]] for g in gpus)]
+    w = 0.8 / len(present)
+    x = np.arange(len(gpus))
+    speedups = []
+    for i, (key, impl, label) in enumerate(present):
+        vals = [e2e[g]["backends"].get(key, {}).get("decode", {}).get("tok_s", 0) for g in gpus]
+        color = SERIES["fp16"]["color"] if key == "fp16" else SERIES[impl]["color"]
+        bars = ax.bar(x - 0.4 + w * (i + 0.5), vals, width=w, color=color, label=label,
+                      edgecolor=ax.get_facecolor(), linewidth=2)
+        for b, v in zip(bars, vals):
+            if v:
+                ax.text(b.get_x() + b.get_width() / 2, v, f"{v:.0f}", ha="center", va="bottom",
+                        color=TEXT, fontsize=10, family="JetBrains Mono")
+    for g in gpus:
+        b = e2e[g]["backends"]
+        if "fp16" in b and "ours" in b:
+            speedups.append((g, b["ours"]["decode"]["tok_s"] / b["fp16"]["decode"]["tok_s"]))
+    ax.set_xticks(x, gpus)
+    ax.set_ylabel("decode tokens / s (batch 1)")
+    ax.legend(loc="upper left")
+    ax.grid(axis="x", visible=False)
+    s = ", ".join(f"{sp:.2f}x on {g}" for g, sp in speedups)
+    ax.set_title(f"Qwen2.5-1.5B decodes {s} faster with 4-bit kernels", fontsize=13)
+    footnote(fig, "batch 1 | CUDA graphs both sides | embeddings and lm_head stay fp16")
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    return _save(fig, "decode_tokens")
+
+
+def build_all() -> list:
+    setup_matplotlib()
+    rows = data.bench_rows()
+    e2e = data.e2e_results()
+    made = []
+    for gpu in sorted({r["gpu"] for r in rows}):
+        made += speedup_elementwise(rows, gpu, "rmsnorm", {"residual": True}, "M")
+        made += speedup_elementwise(rows, gpu, "swiglu", {}, "M")
+        made += speedup_w4a16(rows, gpu)
+        made += roofline(rows, gpu)
+        made += bandwidth_bars(rows, gpu)
+        made += triton_vs_cuda(rows, gpu)
+    made += decode_tokens(e2e)
+    return made
+
+
+if __name__ == "__main__":
+    for p in build_all():
+        print(p.relative_to(ROOT))
