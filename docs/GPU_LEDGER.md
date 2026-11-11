@@ -8,7 +8,7 @@ returns no result, local wall time is used instead (an over-estimate).
 Estimated cost = GPU rate x 1.15 (CPU and
 memory allowance). Rates: L4 $0.8/h, H100 $3.95/h.
 
-**Totals:** 1.120 GPU-hours, est. $1.03 of $30 (dev $1.03 of $22, H100 0.0 of 90 min).
+**Totals:** 1.180 GPU-hours, est. $1.09 of $30 (dev $1.09 of $22, H100 0.0 of 90 min).
 
 | # | Date | Purpose | GPU | nvidia-smi name | Billed s | Est. $ | Running $ | OK | Note |
 |---|---|---|---|---|---|---|---|---|---|
@@ -17,6 +17,7 @@ memory allowance). Rates: L4 $0.8/h, H100 $3.95/h.
 | 3 | 2026-11-11 20:53 UTC | multi {'deadline_s': 1500, 'steps': [{'task': 'pytest', 'args': 'tests/test_w4a1 | L4 | NVIDIA L4 | 1497 | 0.383 | 0.772 | no | local wall 1892s |
 | 4 | 2026-11-11 21:11 UTC | multi {'deadline_s': 1500, 'steps': [{'task': 'e2e', 'backends': ['fp16', 'ours' | L4 | NVIDIA L4 | 709 | 0.181 | 0.954 | no | local wall 966s |
 | 5 | 2026-11-11 21:18 UTC | multi {'deadline_s': 1500, 'steps': [{'task': 'e2e', 'backends': ['fp16', 'ours' | L4 | NVIDIA L4 | 300 | 0.077 | 1.030 | yes | local wall 287s |
+| 6 | 2026-11-11 22:42 UTC | multi {'deadline_s': 1500, 'steps': [{'task': 'pytest', 'args': 'tests/test_w4a1 | L4 | NVIDIA L4 | 218 | 0.056 | 1.086 | yes | local wall 4868s |
 
 ## Reconciliation with Modal billing
 

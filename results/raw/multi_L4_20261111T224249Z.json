@@ -1,0 +1,2161 @@
+{
+  "steps": [
+    {
+      "ok": true,
+      "returncode": 0,
+      "log": "..................................                                       [100%]\n=============================== warnings summary ===============================\ntests/test_w4a16.py::test_gemv[1-64-256]\n  /usr/local/lib/python3.12/site-packages/triton/knobs.py:504: UserWarning: TRITON_DEFAULT_FP_FUSION is unset: defaulting to FP fusion ENABLED for backward compatibility in Triton 3.9. The default will change to DISABLED in Triton 3.10; set TRITON_DEFAULT_FP_FUSION=1 to keep fusion enabled or =0 to adopt the new default early and silence this warning.\n    warn_once(FP_FUSION_DEFAULT_WARNING)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n34 passed, 18 deselected, 1 warning in 102.32s (0:01:42)\n",
+      "summary": "..................................                                       [100%]\n=============================== warnings summary ===============================\ntests/test_w4a16.py::test_gemv[1-64-256]\n  /usr/local/lib/python3.12/site-packages/triton/knobs.py:504: UserWarning: TRITON_DEFAULT_FP_FUSION is unset: defaulting to FP fusion ENABLED for backward compatibility in Triton 3.9. The default will change to DISABLED in Triton 3.10; set TRITON_DEFAULT_FP_FUSION=1 to keep fusion enabled or =0 to adopt the new default early and silence this warning.\n    warn_once(FP_FUSION_DEFAULT_WARNING)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n34 passed, 18 deselected, 1 warning in 102.32s (0:01:42)",
+      "task": "pytest",
+      "params": {
+        "args": "tests/test_w4a16.py -k \"gemv or autotuned_decode\""
+      },
+      "step_s": 106.9
+    },
+    {
+      "ok": true,
+      "shape": "gate_up 17920x1536, M=1",
+      "kernels": {
+        "triton": {
+          "us_per_call": 60.718985273532084,
+          "sm_clock_mhz": 1245.0,
+          "mem_clock_mhz": 6251.0,
+          "power_w": 72.045,
+          "power_limit_w": 72.0,
+          "throttle_reasons": [
+            "0x0000000000000004"
+          ],
+          "samples": 30
+        },
+        "cuda": {
+          "us_per_call": 68.27225665656887,
+          "sm_clock_mhz": 1102.5,
+          "mem_clock_mhz": 6251.0,
+          "power_w": 72.13499999999999,
+          "power_limit_w": 72.0,
+          "throttle_reasons": [
+            "0x0000000000000004"
+          ],
+          "samples": 30
+        },
+        "fp16": {
+          "us_per_call": 208.89904022216797,
+          "sm_clock_mhz": 1207.5,
+          "mem_clock_mhz": 6251.0,
+          "power_w": 72.08500000000001,
+          "power_limit_w": 72.0,
+          "throttle_reasons": [
+            "0x0000000000000004"
+          ],
+          "samples": 30
+        }
+      },
+      "idle": "1155, 6251, 72.05, 72.00, 0x0000000000000004",
+      "summary": "triton      60.7 us  sm 1245 MHz  mem 6251 MHz  72/72 W  throttle ['0x0000000000000004']\ncuda        68.3 us  sm 1102 MHz  mem 6251 MHz  72/72 W  throttle ['0x0000000000000004']\nfp16       208.9 us  sm 1208 MHz  mem 6251 MHz  72/72 W  throttle ['0x0000000000000004']",
+      "task": "power",
+      "params": {
+        "seconds": 4
+      },
+      "step_s": 16.0
+    },
+    {
+      "ok": true,
+      "finished": true,
+      "run_id": "m3-decode-v3-triton",
+      "gpu": "L4",
+      "spec": {
+        "peak_gbps": 300.0,
+        "peak_fp16_tflops": 121.0,
+        "l2_mb": 48,
+        "sms": 58,
+        "source": "https://www.nvidia.com/en-us/data-center/l4/"
+      },
+      "method": {
+        "timing": "cuda_graph_rotating_buffers",
+        "measurements": 7,
+        "min_ms": 50.0,
+        "sweeps": 1,
+        "dtype": "float16"
+      },
+      "results": [
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_qkv",
+            "M": 1,
+            "N": 2048,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.010601996587327689,
+          "ms_min": 0.010601996587327689,
+          "ms_max": 0.010601996587327689,
+          "spread_pct": 0.0,
+          "bytes": 1678336,
+          "flops": 6291456,
+          "note": "",
+          "copies": 121,
+          "eager_ms": 0.13416515697132458,
+          "flag_spread": false,
+          "gbps": 158.30376723626517,
+          "pct_peak_bw": 52.76792241208839,
+          "tflops": 0.5934218095787755,
+          "pct_peak_flops": 0.4904312475857649,
+          "intensity": 3.74862721171446
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_qkv",
+            "M": 2,
+            "N": 2048,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.014075892610230026,
+          "ms_min": 0.014075892610230026,
+          "ms_max": 0.014075892610230026,
+          "spread_pct": 0.0,
+          "bytes": 1685504,
+          "flops": 12582912,
+          "note": "",
+          "copies": 121,
+          "eager_ms": 0.14550664602232374,
+          "flag_spread": false,
+          "gbps": 119.74402239862326,
+          "pct_peak_bw": 39.91467413287442,
+          "tflops": 0.893933503787535,
+          "pct_peak_flops": 0.7387880196591198,
+          "intensity": 7.465370595382746
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_qkv",
+            "M": 4,
+            "N": 2048,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.014232381184895834,
+          "ms_min": 0.014232381184895834,
+          "ms_max": 0.014232381184895834,
+          "spread_pct": 0.0,
+          "bytes": 1699840,
+          "flops": 25165824,
+          "note": "",
+          "copies": 120,
+          "eager_ms": 0.1570560031467014,
+          "flag_spread": false,
+          "gbps": 119.43468755628618,
+          "pct_peak_bw": 39.81156251876206,
+          "tflops": 1.7682089646887282,
+          "pct_peak_flops": 1.4613297228832465,
+          "intensity": 14.804819277108434
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_qkv",
+            "M": 8,
+            "N": 2048,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.014725251888439199,
+          "ms_min": 0.014725251888439199,
+          "ms_max": 0.014725251888439199,
+          "spread_pct": 0.0,
+          "bytes": 1728512,
+          "flops": 50331648,
+          "note": "",
+          "copies": 119,
+          "eager_ms": 0.14485440935407365,
+          "flag_spread": false,
+          "gbps": 117.38420592703446,
+          "pct_peak_bw": 39.12806864234482,
+          "tflops": 3.418050053154975,
+          "pct_peak_flops": 2.824834754673533,
+          "intensity": 29.118483412322274
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_qkv",
+            "M": 16,
+            "N": 2048,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.015344430537428243,
+          "ms_min": 0.015344430537428243,
+          "ms_max": 0.015344430537428243,
+          "spread_pct": 0.0,
+          "bytes": 1785856,
+          "flops": 100663296,
+          "note": "",
+          "copies": 118,
+          "eager_ms": 0.14760931198206326,
+          "flag_spread": false,
+          "gbps": 116.38463842916343,
+          "pct_peak_bw": 38.794879476387806,
+          "tflops": 6.5602497110897255,
+          "pct_peak_flops": 5.4216939761072105,
+          "intensity": 56.36697247706422
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_o",
+            "M": 1,
+            "N": 1536,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.00902828159010717,
+          "ms_min": 0.00902828159010717,
+          "ms_max": 0.00902828159010717,
+          "spread_pct": 0.0,
+          "bytes": 1259520,
+          "flops": 4718592,
+          "note": "",
+          "copies": 161,
+          "eager_ms": 0.13325780074788918,
+          "flag_spread": false,
+          "gbps": 139.50827601346987,
+          "pct_peak_bw": 46.50275867115663,
+          "tflops": 0.5226456389187555,
+          "pct_peak_flops": 0.43193854456095493,
+          "intensity": 3.7463414634146344
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_o",
+            "M": 2,
+            "N": 1536,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.011576746304829915,
+          "ms_min": 0.011576746304829915,
+          "ms_max": 0.011576746304829915,
+          "spread_pct": 0.0,
+          "bytes": 1265664,
+          "flops": 9437184,
+          "note": "",
+          "copies": 160,
+          "eager_ms": 0.14857813517252605,
+          "flag_spread": false,
+          "gbps": 109.32812784123587,
+          "pct_peak_bw": 36.44270928041196,
+          "tflops": 0.8151844872045549,
+          "pct_peak_flops": 0.6737061877723595,
+          "intensity": 7.456310679611651
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_o",
+            "M": 4,
+            "N": 1536,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.01267692309159499,
+          "ms_min": 0.01267692309159499,
+          "ms_max": 0.01267692309159499,
+          "spread_pct": 0.0,
+          "bytes": 1277952,
+          "flops": 18874368,
+          "note": "",
+          "copies": 160,
+          "eager_ms": 0.09951840043067932,
+          "flag_spread": false,
+          "gbps": 100.80932027167565,
+          "pct_peak_bw": 33.60310675722521,
+          "tflops": 1.4888761147816711,
+          "pct_peak_flops": 1.2304761279187364,
+          "intensity": 14.76923076923077
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_o",
+            "M": 8,
+            "N": 1536,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.012050084261662524,
+          "ms_min": 0.012050084261662524,
+          "ms_max": 0.012050084261662524,
+          "spread_pct": 0.0,
+          "bytes": 1302528,
+          "flops": 37748736,
+          "note": "",
+          "copies": 158,
+          "eager_ms": 0.1461425169610776,
+          "flag_spread": false,
+          "gbps": 108.0928541009466,
+          "pct_peak_bw": 36.030951366982194,
+          "tflops": 3.132653281114226,
+          "pct_peak_flops": 2.58896965381341,
+          "intensity": 28.9811320754717
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_o",
+            "M": 16,
+            "N": 1536,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.012574634690934736,
+          "ms_min": 0.012574634690934736,
+          "ms_max": 0.012574634690934736,
+          "spread_pct": 0.0,
+          "bytes": 1351680,
+          "flops": 75497472,
+          "note": "",
+          "copies": 155,
+          "eager_ms": 0.14736790810861894,
+          "flag_spread": false,
+          "gbps": 107.49258592573258,
+          "pct_peak_bw": 35.8308619752442,
+          "tflops": 6.003949526615464,
+          "pct_peak_flops": 4.961941757533441,
+          "intensity": 55.85454545454545
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_gate_up",
+            "M": 1,
+            "N": 17920,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.060392118403932445,
+          "ms_min": 0.060392118403932445,
+          "ms_max": 0.060392118403932445,
+          "spread_pct": 0.0,
+          "bytes": 14661632,
+          "flops": 55050240,
+          "note": "",
+          "copies": 14,
+          "eager_ms": 0.08890108078245133,
+          "flag_spread": false,
+          "gbps": 242.77393122618636,
+          "pct_peak_bw": 80.92464374206212,
+          "tflops": 0.9115467623075695,
+          "pct_peak_flops": 0.7533444316591483,
+          "intensity": 3.7547143455789915
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_gate_up",
+            "M": 2,
+            "N": 17920,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.07881904783703032,
+          "ms_min": 0.07881904783703032,
+          "ms_max": 0.07881904783703032,
+          "spread_pct": 0.0,
+          "bytes": 14700544,
+          "flops": 110100480,
+          "note": "",
+          "copies": 14,
+          "eager_ms": 0.09888206868677095,
+          "flag_spread": false,
+          "gbps": 186.51004298346106,
+          "pct_peak_bw": 62.170014327820354,
+          "tflops": 1.3968765548608062,
+          "pct_peak_flops": 1.1544434337692613,
+          "intensity": 7.4895514070771805
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_gate_up",
+            "M": 4,
+            "N": 17920,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.08037264593716326,
+          "ms_min": 0.08037264593716326,
+          "ms_max": 0.08037264593716326,
+          "spread_pct": 0.0,
+          "bytes": 14778368,
+          "flops": 220200960,
+          "note": "",
+          "copies": 14,
+          "eager_ms": 0.09938934431647375,
+          "flag_spread": false,
+          "gbps": 183.8731054288543,
+          "pct_peak_bw": 61.29103514295143,
+          "tflops": 2.7397500409798248,
+          "pct_peak_flops": 2.2642562322147315,
+          "intensity": 14.900221729490022
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_gate_up",
+            "M": 8,
+            "N": 17920,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.08259240248448269,
+          "ms_min": 0.08259240248448269,
+          "ms_max": 0.08259240248448269,
+          "spread_pct": 0.0,
+          "bytes": 14934016,
+          "flops": 440401920,
+          "note": "",
+          "copies": 14,
+          "eager_ms": 0.09993438017533122,
+          "flag_spread": false,
+          "gbps": 180.81585655297744,
+          "pct_peak_bw": 60.271952184325805,
+          "tflops": 5.332232829560104,
+          "pct_peak_flops": 4.406803991371986,
+          "intensity": 29.489851892484914
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_gate_up",
+            "M": 16,
+            "N": 17920,
+            "K": 1536
+          },
+          "sweeps": 1,
+          "ms": 0.08589365575220678,
+          "ms_min": 0.08589365575220678,
+          "ms_max": 0.08589365575220678,
+          "spread_pct": 0.0,
+          "bytes": 15245312,
+          "flops": 880803840,
+          "note": "",
+          "copies": 14,
+          "eager_ms": 0.1005324227469308,
+          "flag_spread": false,
+          "gbps": 177.49054766024807,
+          "pct_peak_bw": 59.16351588674936,
+          "tflops": 10.254585537039159,
+          "pct_peak_flops": 8.474864080197651,
+          "intensity": 57.775389575497044
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_down",
+            "M": 1,
+            "N": 1536,
+            "K": 8960
+          },
+          "sweeps": 1,
+          "ms": 0.03415771335750431,
+          "ms_min": 0.03415771335750431,
+          "ms_max": 0.03415771335750431,
+          "spread_pct": 0.0,
+          "bytes": 7332352,
+          "flops": 27525120,
+          "note": "",
+          "copies": 28,
+          "eager_ms": 0.1385112376440139,
+          "flag_spread": false,
+          "gbps": 214.66167606881424,
+          "pct_peak_bw": 71.55389202293807,
+          "tflops": 0.8058244330325713,
+          "pct_peak_flops": 0.6659706058120425,
+          "intensity": 3.753927798338105
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_down",
+            "M": 2,
+            "N": 1536,
+            "K": 8960
+          },
+          "sweeps": 1,
+          "ms": 0.0410740155131877,
+          "ms_min": 0.0410740155131877,
+          "ms_max": 0.0410740155131877,
+          "spread_pct": 0.0,
+          "bytes": 7353344,
+          "flops": 55050240,
+          "note": "",
+          "copies": 28,
+          "eager_ms": 0.15135252320921266,
+          "flag_spread": false,
+          "gbps": 179.02666462301573,
+          "pct_peak_bw": 59.67555487433858,
+          "tflops": 1.3402692508192908,
+          "pct_peak_flops": 1.1076605378671824,
+          "intensity": 7.48642250382955
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_down",
+            "M": 4,
+            "N": 1536,
+            "K": 8960
+          },
+          "sweeps": 1,
+          "ms": 0.041695015103209256,
+          "ms_min": 0.041695015103209256,
+          "ms_max": 0.041695015103209256,
+          "spread_pct": 0.0,
+          "bytes": 7395328,
+          "flops": 110100480,
+          "note": "",
+          "copies": 28,
+          "eager_ms": 0.15205302919660296,
+          "flag_spread": false,
+          "gbps": 177.36719801381685,
+          "pct_peak_bw": 59.12239933793895,
+          "tflops": 2.640614944675379,
+          "pct_peak_flops": 2.1823264005581646,
+          "intensity": 14.887842702852396
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_down",
+            "M": 8,
+            "N": 1536,
+            "K": 8960
+          },
+          "sweeps": 1,
+          "ms": 0.042687634059361046,
+          "ms_min": 0.042687634059361046,
+          "ms_max": 0.042687634059361046,
+          "spread_pct": 0.0,
+          "bytes": 7479296,
+          "flops": 220200960,
+          "note": "",
+          "copies": 28,
+          "eager_ms": 0.15253942663019354,
+          "flag_spread": false,
+          "gbps": 175.20989777974944,
+          "pct_peak_bw": 58.40329925991648,
+          "tflops": 5.158425029922963,
+          "pct_peak_flops": 4.263161181754515,
+          "intensity": 29.441401971522453
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "qwen_down",
+            "M": 16,
+            "N": 1536,
+            "K": 8960
+          },
+          "sweeps": 1,
+          "ms": 0.044307149140490255,
+          "ms_min": 0.044307149140490255,
+          "ms_max": 0.044307149140490255,
+          "spread_pct": 0.0,
+          "bytes": 7647232,
+          "flops": 440401920,
+          "note": "",
+          "copies": 27,
+          "eager_ms": 0.15162153597231265,
+          "flag_spread": false,
+          "gbps": 172.59589362772942,
+          "pct_peak_bw": 57.531964542576475,
+          "tflops": 9.939748517864741,
+          "pct_peak_flops": 8.21466819658243,
+          "intensity": 57.58971612212105
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "8b_up",
+            "M": 1,
+            "N": 14336,
+            "K": 4096
+          },
+          "sweeps": 1,
+          "ms": 0.1615741231158874,
+          "ms_min": 0.1615741231158874,
+          "ms_max": 0.1615741231158874,
+          "spread_pct": 0.0,
+          "bytes": 31232000,
+          "flops": 117440512,
+          "note": "",
+          "copies": 7,
+          "eager_ms": 0.1624795368739537,
+          "flag_spread": false,
+          "gbps": 193.29827943797142,
+          "pct_peak_bw": 64.43275981265714,
+          "tflops": 0.7268522318748217,
+          "pct_peak_flops": 0.600704323863489,
+          "intensity": 3.7602622950819673
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "8b_up",
+            "M": 2,
+            "N": 14336,
+            "K": 4096
+          },
+          "sweeps": 1,
+          "ms": 0.16234913278133312,
+          "ms_min": 0.16234913278133312,
+          "ms_max": 0.16234913278133312,
+          "spread_pct": 0.0,
+          "bytes": 31268864,
+          "flops": 234881024,
+          "note": "",
+          "copies": 7,
+          "eager_ms": 0.16280849862011362,
+          "flag_spread": false,
+          "gbps": 192.6025933388619,
+          "pct_peak_bw": 64.20086444628731,
+          "tflops": 1.4467648824238535,
+          "pct_peak_flops": 1.1956734565486393,
+          "intensity": 7.511658370447996
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "8b_up",
+            "M": 4,
+            "N": 14336,
+            "K": 4096
+          },
+          "sweeps": 1,
+          "ms": 0.1633355652757466,
+          "ms_min": 0.1633355652757466,
+          "ms_max": 0.1633355652757466,
+          "spread_pct": 0.0,
+          "bytes": 31342592,
+          "flops": 469762048,
+          "note": "",
+          "copies": 7,
+          "eager_ms": 0.1633401901002914,
+          "flag_spread": false,
+          "gbps": 191.89079822931868,
+          "pct_peak_bw": 63.96359940977289,
+          "tflops": 2.87605487027236,
+          "pct_peak_flops": 2.37690485146476,
+          "intensity": 14.987976999477262
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "8b_up",
+            "M": 8,
+            "N": 14336,
+            "K": 4096
+          },
+          "sweeps": 1,
+          "ms": 0.16659375718960487,
+          "ms_min": 0.16659375718960487,
+          "ms_max": 0.16659375718960487,
+          "spread_pct": 0.0,
+          "bytes": 31490048,
+          "flops": 939524096,
+          "note": "",
+          "copies": 7,
+          "eager_ms": 0.16549149133208998,
+          "flag_spread": false,
+          "gbps": 189.0229773986088,
+          "pct_peak_bw": 63.00765913286959,
+          "tflops": 5.639611662823008,
+          "pct_peak_flops": 4.660836084977693,
+          "intensity": 29.835587929240376
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "8b_up",
+            "M": 16,
+            "N": 14336,
+            "K": 4096
+          },
+          "sweeps": 1,
+          "ms": 0.17214693341936385,
+          "ms_min": 0.17214693341936385,
+          "ms_max": 0.17214693341936385,
+          "spread_pct": 0.0,
+          "bytes": 31784960,
+          "flops": 1879048192,
+          "note": "",
+          "copies": 7,
+          "eager_ms": 0.17032662011626967,
+          "flag_spread": false,
+          "gbps": 184.63854899215235,
+          "pct_peak_bw": 61.546182997384115,
+          "tflops": 10.915374178769055,
+          "pct_peak_flops": 9.020970395676905,
+          "intensity": 59.11752577319588
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "8b_down",
+            "M": 1,
+            "N": 4096,
+            "K": 14336
+          },
+          "sweeps": 1,
+          "ms": 0.12855334311538602,
+          "ms_min": 0.12855334311538602,
+          "ms_max": 0.12855334311538602,
+          "spread_pct": 0.0,
+          "bytes": 31232000,
+          "flops": 117440512,
+          "note": "",
+          "copies": 7,
+          "eager_ms": 0.1362233453867387,
+          "flag_spread": false,
+          "gbps": 242.9497299962631,
+          "pct_peak_bw": 80.9832433320877,
+          "tflops": 0.9135547093052926,
+          "pct_peak_flops": 0.7550038919878451,
+          "intensity": 3.7602622950819673
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "8b_down",
+            "M": 2,
+            "N": 4096,
+            "K": 14336
+          },
+          "sweeps": 1,
+          "ms": 0.15525049008197667,
+          "ms_min": 0.15525049008197667,
+          "ms_max": 0.15525049008197667,
+          "spread_pct": 0.0,
+          "bytes": 31268864,
+          "flops": 234881024,
+          "note": "",
+          "copies": 7,
+          "eager_ms": 0.1540542545175194,
+          "flag_spread": false,
+          "gbps": 201.40911621914466,
+          "pct_peak_bw": 67.13637207304822,
+          "tflops": 1.512916473732071,
+          "pct_peak_flops": 1.2503441931670007,
+          "intensity": 7.511658370447996
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "8b_down",
+            "M": 4,
+            "N": 4096,
+            "K": 14336
+          },
+          "sweeps": 1,
+          "ms": 0.16035962104797363,
+          "ms_min": 0.16035962104797363,
+          "ms_max": 0.16035962104797363,
+          "spread_pct": 0.0,
+          "bytes": 31342592,
+          "flops": 469762048,
+          "note": "",
+          "copies": 7,
+          "eager_ms": 0.1622616473893474,
+          "flag_spread": false,
+          "gbps": 195.45189615173425,
+          "pct_peak_bw": 65.15063205057808,
+          "tflops": 2.9294285240264113,
+          "pct_peak_flops": 2.4210153091127364,
+          "intensity": 14.987976999477262
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "8b_down",
+            "M": 8,
+            "N": 4096,
+            "K": 14336
+          },
+          "sweeps": 1,
+          "ms": 0.16601904233296713,
+          "ms_min": 0.16601904233296713,
+          "ms_max": 0.16601904233296713,
+          "spread_pct": 0.0,
+          "bytes": 31490048,
+          "flops": 939524096,
+          "note": "",
+          "copies": 7,
+          "eager_ms": 0.1648244673681075,
+          "flag_spread": false,
+          "gbps": 189.6773259108656,
+          "pct_peak_bw": 63.22577530362186,
+          "tflops": 5.659134535396815,
+          "pct_peak_flops": 4.67697069041059,
+          "intensity": 29.835587929240376
+        },
+        {
+          "kernel": "w4a16",
+          "impl": "triton",
+          "shape": {
+            "layer": "8b_down",
+            "M": 16,
+            "N": 4096,
+            "K": 14336
+          },
+          "sweeps": 1,
+          "ms": 0.17382166668274482,
+          "ms_min": 0.17382166668274482,
+          "ms_max": 0.17382166668274482,
+          "spread_pct": 0.0,
+          "bytes": 31784960,
+          "flops": 1879048192,
+          "note": "",
+          "copies": 7,
+          "eager_ms": 0.17443526910275828,
+          "flag_spread": false,
+          "gbps": 182.8595974632619,
+          "pct_peak_bw": 60.95319915442063,
+          "tflops": 10.81020696591061,
+          "pct_peak_flops": 8.934055343727776,
+          "intensity": 59.11752577319588
+        }
+      ],
+      "errors": [],
+      "raw": [
+        {
+          "key": "0|w4a16|triton|layer=qwen_qkv,M=1,N=2048,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_qkv",
+            "M": 1,
+            "N": 2048,
+            "K": 1536
+          },
+          "bytes": 1678336,
+          "flops": 6291456,
+          "note": "",
+          "copies": 121,
+          "graph_ms": 0.010601996587327689,
+          "eager_ms": 0.13416515697132458
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_qkv,M=2,N=2048,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_qkv",
+            "M": 2,
+            "N": 2048,
+            "K": 1536
+          },
+          "bytes": 1685504,
+          "flops": 12582912,
+          "note": "",
+          "copies": 121,
+          "graph_ms": 0.014075892610230026,
+          "eager_ms": 0.14550664602232374
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_qkv,M=4,N=2048,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_qkv",
+            "M": 4,
+            "N": 2048,
+            "K": 1536
+          },
+          "bytes": 1699840,
+          "flops": 25165824,
+          "note": "",
+          "copies": 120,
+          "graph_ms": 0.014232381184895834,
+          "eager_ms": 0.1570560031467014
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_qkv,M=8,N=2048,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_qkv",
+            "M": 8,
+            "N": 2048,
+            "K": 1536
+          },
+          "bytes": 1728512,
+          "flops": 50331648,
+          "note": "",
+          "copies": 119,
+          "graph_ms": 0.014725251888439199,
+          "eager_ms": 0.14485440935407365
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_qkv,M=16,N=2048,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_qkv",
+            "M": 16,
+            "N": 2048,
+            "K": 1536
+          },
+          "bytes": 1785856,
+          "flops": 100663296,
+          "note": "",
+          "copies": 118,
+          "graph_ms": 0.015344430537428243,
+          "eager_ms": 0.14760931198206326
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_o,M=1,N=1536,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_o",
+            "M": 1,
+            "N": 1536,
+            "K": 1536
+          },
+          "bytes": 1259520,
+          "flops": 4718592,
+          "note": "",
+          "copies": 161,
+          "graph_ms": 0.00902828159010717,
+          "eager_ms": 0.13325780074788918
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_o,M=2,N=1536,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_o",
+            "M": 2,
+            "N": 1536,
+            "K": 1536
+          },
+          "bytes": 1265664,
+          "flops": 9437184,
+          "note": "",
+          "copies": 160,
+          "graph_ms": 0.011576746304829915,
+          "eager_ms": 0.14857813517252605
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_o,M=4,N=1536,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_o",
+            "M": 4,
+            "N": 1536,
+            "K": 1536
+          },
+          "bytes": 1277952,
+          "flops": 18874368,
+          "note": "",
+          "copies": 160,
+          "graph_ms": 0.01267692309159499,
+          "eager_ms": 0.09951840043067932
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_o,M=8,N=1536,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_o",
+            "M": 8,
+            "N": 1536,
+            "K": 1536
+          },
+          "bytes": 1302528,
+          "flops": 37748736,
+          "note": "",
+          "copies": 158,
+          "graph_ms": 0.012050084261662524,
+          "eager_ms": 0.1461425169610776
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_o,M=16,N=1536,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_o",
+            "M": 16,
+            "N": 1536,
+            "K": 1536
+          },
+          "bytes": 1351680,
+          "flops": 75497472,
+          "note": "",
+          "copies": 155,
+          "graph_ms": 0.012574634690934736,
+          "eager_ms": 0.14736790810861894
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_gate_up,M=1,N=17920,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_gate_up",
+            "M": 1,
+            "N": 17920,
+            "K": 1536
+          },
+          "bytes": 14661632,
+          "flops": 55050240,
+          "note": "",
+          "copies": 14,
+          "graph_ms": 0.060392118403932445,
+          "eager_ms": 0.08890108078245133
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_gate_up,M=2,N=17920,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_gate_up",
+            "M": 2,
+            "N": 17920,
+            "K": 1536
+          },
+          "bytes": 14700544,
+          "flops": 110100480,
+          "note": "",
+          "copies": 14,
+          "graph_ms": 0.07881904783703032,
+          "eager_ms": 0.09888206868677095
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_gate_up,M=4,N=17920,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_gate_up",
+            "M": 4,
+            "N": 17920,
+            "K": 1536
+          },
+          "bytes": 14778368,
+          "flops": 220200960,
+          "note": "",
+          "copies": 14,
+          "graph_ms": 0.08037264593716326,
+          "eager_ms": 0.09938934431647375
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_gate_up,M=8,N=17920,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_gate_up",
+            "M": 8,
+            "N": 17920,
+            "K": 1536
+          },
+          "bytes": 14934016,
+          "flops": 440401920,
+          "note": "",
+          "copies": 14,
+          "graph_ms": 0.08259240248448269,
+          "eager_ms": 0.09993438017533122
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_gate_up,M=16,N=17920,K=1536",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_gate_up",
+            "M": 16,
+            "N": 17920,
+            "K": 1536
+          },
+          "bytes": 15245312,
+          "flops": 880803840,
+          "note": "",
+          "copies": 14,
+          "graph_ms": 0.08589365575220678,
+          "eager_ms": 0.1005324227469308
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_down,M=1,N=1536,K=8960",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_down",
+            "M": 1,
+            "N": 1536,
+            "K": 8960
+          },
+          "bytes": 7332352,
+          "flops": 27525120,
+          "note": "",
+          "copies": 28,
+          "graph_ms": 0.03415771335750431,
+          "eager_ms": 0.1385112376440139
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_down,M=2,N=1536,K=8960",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_down",
+            "M": 2,
+            "N": 1536,
+            "K": 8960
+          },
+          "bytes": 7353344,
+          "flops": 55050240,
+          "note": "",
+          "copies": 28,
+          "graph_ms": 0.0410740155131877,
+          "eager_ms": 0.15135252320921266
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_down,M=4,N=1536,K=8960",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_down",
+            "M": 4,
+            "N": 1536,
+            "K": 8960
+          },
+          "bytes": 7395328,
+          "flops": 110100480,
+          "note": "",
+          "copies": 28,
+          "graph_ms": 0.041695015103209256,
+          "eager_ms": 0.15205302919660296
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_down,M=8,N=1536,K=8960",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_down",
+            "M": 8,
+            "N": 1536,
+            "K": 8960
+          },
+          "bytes": 7479296,
+          "flops": 220200960,
+          "note": "",
+          "copies": 28,
+          "graph_ms": 0.042687634059361046,
+          "eager_ms": 0.15253942663019354
+        },
+        {
+          "key": "0|w4a16|triton|layer=qwen_down,M=16,N=1536,K=8960",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "qwen_down",
+            "M": 16,
+            "N": 1536,
+            "K": 8960
+          },
+          "bytes": 7647232,
+          "flops": 440401920,
+          "note": "",
+          "copies": 27,
+          "graph_ms": 0.044307149140490255,
+          "eager_ms": 0.15162153597231265
+        },
+        {
+          "key": "0|w4a16|triton|layer=8b_up,M=1,N=14336,K=4096",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "8b_up",
+            "M": 1,
+            "N": 14336,
+            "K": 4096
+          },
+          "bytes": 31232000,
+          "flops": 117440512,
+          "note": "",
+          "copies": 7,
+          "graph_ms": 0.1615741231158874,
+          "eager_ms": 0.1624795368739537
+        },
+        {
+          "key": "0|w4a16|triton|layer=8b_up,M=2,N=14336,K=4096",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "8b_up",
+            "M": 2,
+            "N": 14336,
+            "K": 4096
+          },
+          "bytes": 31268864,
+          "flops": 234881024,
+          "note": "",
+          "copies": 7,
+          "graph_ms": 0.16234913278133312,
+          "eager_ms": 0.16280849862011362
+        },
+        {
+          "key": "0|w4a16|triton|layer=8b_up,M=4,N=14336,K=4096",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "8b_up",
+            "M": 4,
+            "N": 14336,
+            "K": 4096
+          },
+          "bytes": 31342592,
+          "flops": 469762048,
+          "note": "",
+          "copies": 7,
+          "graph_ms": 0.1633355652757466,
+          "eager_ms": 0.1633401901002914
+        },
+        {
+          "key": "0|w4a16|triton|layer=8b_up,M=8,N=14336,K=4096",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "8b_up",
+            "M": 8,
+            "N": 14336,
+            "K": 4096
+          },
+          "bytes": 31490048,
+          "flops": 939524096,
+          "note": "",
+          "copies": 7,
+          "graph_ms": 0.16659375718960487,
+          "eager_ms": 0.16549149133208998
+        },
+        {
+          "key": "0|w4a16|triton|layer=8b_up,M=16,N=14336,K=4096",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "8b_up",
+            "M": 16,
+            "N": 14336,
+            "K": 4096
+          },
+          "bytes": 31784960,
+          "flops": 1879048192,
+          "note": "",
+          "copies": 7,
+          "graph_ms": 0.17214693341936385,
+          "eager_ms": 0.17032662011626967
+        },
+        {
+          "key": "0|w4a16|triton|layer=8b_down,M=1,N=4096,K=14336",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "8b_down",
+            "M": 1,
+            "N": 4096,
+            "K": 14336
+          },
+          "bytes": 31232000,
+          "flops": 117440512,
+          "note": "",
+          "copies": 7,
+          "graph_ms": 0.12855334311538602,
+          "eager_ms": 0.1362233453867387
+        },
+        {
+          "key": "0|w4a16|triton|layer=8b_down,M=2,N=4096,K=14336",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "8b_down",
+            "M": 2,
+            "N": 4096,
+            "K": 14336
+          },
+          "bytes": 31268864,
+          "flops": 234881024,
+          "note": "",
+          "copies": 7,
+          "graph_ms": 0.15525049008197667,
+          "eager_ms": 0.1540542545175194
+        },
+        {
+          "key": "0|w4a16|triton|layer=8b_down,M=4,N=4096,K=14336",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "8b_down",
+            "M": 4,
+            "N": 4096,
+            "K": 14336
+          },
+          "bytes": 31342592,
+          "flops": 469762048,
+          "note": "",
+          "copies": 7,
+          "graph_ms": 0.16035962104797363,
+          "eager_ms": 0.1622616473893474
+        },
+        {
+          "key": "0|w4a16|triton|layer=8b_down,M=8,N=4096,K=14336",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "8b_down",
+            "M": 8,
+            "N": 4096,
+            "K": 14336
+          },
+          "bytes": 31490048,
+          "flops": 939524096,
+          "note": "",
+          "copies": 7,
+          "graph_ms": 0.16601904233296713,
+          "eager_ms": 0.1648244673681075
+        },
+        {
+          "key": "0|w4a16|triton|layer=8b_down,M=16,N=4096,K=14336",
+          "sweep": 0,
+          "kernel": "w4a16",
+          "impl": "triton",
+          "gpu_name": "NVIDIA L4",
+          "shape": {
+            "layer": "8b_down",
+            "M": 16,
+            "N": 4096,
+            "K": 14336
+          },
+          "bytes": 31784960,
+          "flops": 1879048192,
+          "note": "",
+          "copies": 7,
+          "graph_ms": 0.17382166668274482,
+          "eager_ms": 0.17443526910275828
+        }
+      ],
+      "triton_configs": {
+        "decode[1, 17920, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[1, 2048, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "decode[2, 2048, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "decode[4, 2048, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[8, 2048, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "decode[16, 2048, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[1, 1536, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[2, 1536, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[4, 1536, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[8, 1536, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[16, 1536, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "decode[2, 17920, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "decode[4, 17920, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[8, 17920, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[16, 17920, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[1, 1536, 8960, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[2, 1536, 8960, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "decode[4, 1536, 8960, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[8, 1536, 8960, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "decode[16, 1536, 8960, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[1, 14336, 4096, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "decode[2, 14336, 4096, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "decode[4, 14336, 4096, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "decode[8, 14336, 4096, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "decode[16, 14336, 4096, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "decode[1, 4096, 14336, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[2, 4096, 14336, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[4, 4096, 14336, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[8, 4096, 14336, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode[16, 4096, 14336, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 3
+        },
+        "split[1, 17920, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[1, 2048, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[2, 2048, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[4, 2048, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[8, 2048, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[16, 2048, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[1, 1536, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[2, 1536, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[4, 1536, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[8, 1536, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[16, 1536, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 32,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[2, 17920, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[4, 17920, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[8, 17920, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[16, 17920, 1536, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[1, 1536, 8960, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "split[2, 1536, 8960, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "split[4, 1536, 8960, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "split[8, 1536, 8960, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "split[16, 1536, 8960, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "split[1, 14336, 4096, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "split[2, 14336, 4096, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "split[4, 14336, 4096, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "split[8, 14336, 4096, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "split[16, 14336, 4096, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "GROUP_M": 8,
+          "warps": 4,
+          "stages": 4
+        },
+        "split[1, 4096, 14336, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 4,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[2, 4096, 14336, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[4, 4096, 14336, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 4,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[8, 4096, 14336, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 4,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "split[16, 4096, 14336, False]": {
+          "BLOCK_M": 16,
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 4,
+          "GROUP_M": 8,
+          "warps": 2,
+          "stages": 3
+        },
+        "gemv[1, 17920, 1536, False]": {
+          "BLOCK_N": 128,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "FACTORED": true,
+          "warps": 4,
+          "stages": 3
+        },
+        "gemv[1, 2048, 1536, False]": {
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "FACTORED": true,
+          "warps": 2,
+          "stages": 3
+        },
+        "gemv[1, 1536, 1536, False]": {
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "FACTORED": false,
+          "warps": 4,
+          "stages": 3
+        },
+        "gemv[1, 1536, 8960, False]": {
+          "BLOCK_N": 32,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "FACTORED": false,
+          "warps": 4,
+          "stages": 4
+        },
+        "gemv[1, 14336, 4096, False]": {
+          "BLOCK_N": 128,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "FACTORED": true,
+          "warps": 4,
+          "stages": 3
+        },
+        "gemv[1, 4096, 14336, False]": {
+          "BLOCK_N": 64,
+          "BLOCK_K": 128,
+          "SPLIT_K": 1,
+          "FACTORED": true,
+          "warps": 2,
+          "stages": 3
+        },
+        "gemv_split[1, 17920, 1536, False]": {
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 2,
+          "FACTORED": true,
+          "warps": 2,
+          "stages": 3
+        },
+        "gemv_split[1, 2048, 1536, False]": {
+          "BLOCK_N": 64,
+          "BLOCK_K": 64,
+          "SPLIT_K": 8,
+          "FACTORED": true,
+          "warps": 2,
+          "stages": 3
+        },
+        "gemv_split[1, 1536, 1536, False]": {
+          "BLOCK_N": 64,
+          "BLOCK_K": 128,
+          "SPLIT_K": 8,
+          "FACTORED": true,
+          "warps": 2,
+          "stages": 3
+        },
+        "gemv_split[1, 1536, 8960, False]": {
+          "BLOCK_N": 64,
+          "BLOCK_K": 128,
+          "SPLIT_K": 8,
+          "FACTORED": true,
+          "warps": 4,
+          "stages": 3
+        },
+        "gemv_split[1, 14336, 4096, False]": {
+          "BLOCK_N": 128,
+          "BLOCK_K": 64,
+          "SPLIT_K": 4,
+          "FACTORED": true,
+          "warps": 2,
+          "stages": 3
+        },
+        "gemv_split[1, 4096, 14336, False]": {
+          "BLOCK_N": 64,
+          "BLOCK_K": 128,
+          "SPLIT_K": 4,
+          "FACTORED": true,
+          "warps": 4,
+          "stages": 3
+        },
+        "decode_path": {
+          "(1, 17920, 1536, False)": "gemv",
+          "(1, 2048, 1536, False)": "gemv_split",
+          "(2, 2048, 1536, False)": "split",
+          "(4, 2048, 1536, False)": "split",
+          "(8, 2048, 1536, False)": "split",
+          "(16, 2048, 1536, False)": "split",
+          "(1, 1536, 1536, False)": "gemv_split",
+          "(2, 1536, 1536, False)": "split",
+          "(4, 1536, 1536, False)": "direct",
+          "(8, 1536, 1536, False)": "split",
+          "(16, 1536, 1536, False)": "split",
+          "(2, 17920, 1536, False)": "direct",
+          "(4, 17920, 1536, False)": "direct",
+          "(8, 17920, 1536, False)": "direct",
+          "(16, 17920, 1536, False)": "direct",
+          "(1, 1536, 8960, False)": "gemv_split",
+          "(2, 1536, 8960, False)": "split",
+          "(4, 1536, 8960, False)": "split",
+          "(8, 1536, 8960, False)": "split",
+          "(16, 1536, 8960, False)": "split",
+          "(1, 14336, 4096, False)": "direct",
+          "(2, 14336, 4096, False)": "direct",
+          "(4, 14336, 4096, False)": "direct",
+          "(8, 14336, 4096, False)": "direct",
+          "(16, 14336, 4096, False)": "direct",
+          "(1, 4096, 14336, False)": "gemv_split",
+          "(2, 4096, 14336, False)": "split",
+          "(4, 4096, 14336, False)": "split",
+          "(8, 4096, 14336, False)": "split",
+          "(16, 4096, 14336, False)": "split"
+        }
+      },
+      "summary": "w4a16    triton   {\"layer\": \"qwen_qkv\", \"M\": 1, \"N\": 2048, \"K\": 1536}               10.6 us   158.3 GB/s  52.8%\nw4a16    triton   {\"layer\": \"qwen_qkv\", \"M\": 2, \"N\": 2048, \"K\": 1536}               14.1 us   119.7 GB/s  39.9%\nw4a16    triton   {\"layer\": \"qwen_qkv\", \"M\": 4, \"N\": 2048, \"K\": 1536}               14.2 us   119.4 GB/s  39.8%\nw4a16    triton   {\"layer\": \"qwen_qkv\", \"M\": 8, \"N\": 2048, \"K\": 1536}               14.7 us   117.4 GB/s  39.1%\nw4a16    triton   {\"layer\": \"qwen_qkv\", \"M\": 16, \"N\": 2048, \"K\": 1536}              15.3 us   116.4 GB/s  38.8%\nw4a16    triton   {\"layer\": \"qwen_o\", \"M\": 1, \"N\": 1536, \"K\": 1536}                  9.0 us   139.5 GB/s  46.5%\nw4a16    triton   {\"layer\": \"qwen_o\", \"M\": 2, \"N\": 1536, \"K\": 1536}                 11.6 us   109.3 GB/s  36.4%\nw4a16    triton   {\"layer\": \"qwen_o\", \"M\": 4, \"N\": 1536, \"K\": 1536}                 12.7 us   100.8 GB/s  33.6%\nw4a16    triton   {\"layer\": \"qwen_o\", \"M\": 8, \"N\": 1536, \"K\": 1536}                 12.1 us   108.1 GB/s  36.0%\nw4a16    triton   {\"layer\": \"qwen_o\", \"M\": 16, \"N\": 1536, \"K\": 1536}                12.6 us   107.5 GB/s  35.8%\nw4a16    triton   {\"layer\": \"qwen_gate_up\", \"M\": 1, \"N\": 17920, \"K\": 1536}          60.4 us   242.8 GB/s  80.9%\nw4a16    triton   {\"layer\": \"qwen_gate_up\", \"M\": 2, \"N\": 17920, \"K\": 1536}          78.8 us   186.5 GB/s  62.2%\nw4a16    triton   {\"layer\": \"qwen_gate_up\", \"M\": 4, \"N\": 17920, \"K\": 1536}          80.4 us   183.9 GB/s  61.3%\nw4a16    triton   {\"layer\": \"qwen_gate_up\", \"M\": 8, \"N\": 17920, \"K\": 1536}          82.6 us   180.8 GB/s  60.3%\nw4a16    triton   {\"layer\": \"qwen_gate_up\", \"M\": 16, \"N\": 17920, \"K\": 1536}         85.9 us   177.5 GB/s  59.2%\nw4a16    triton   {\"layer\": \"qwen_down\", \"M\": 1, \"N\": 1536, \"K\": 8960}              34.2 us   214.7 GB/s  71.6%\nw4a16    triton   {\"layer\": \"qwen_down\", \"M\": 2, \"N\": 1536, \"K\": 8960}              41.1 us   179.0 GB/s  59.7%\nw4a16    triton   {\"layer\": \"qwen_down\", \"M\": 4, \"N\": 1536, \"K\": 8960}              41.7 us   177.4 GB/s  59.1%\nw4a16    triton   {\"layer\": \"qwen_down\", \"M\": 8, \"N\": 1536, \"K\": 8960}              42.7 us   175.2 GB/s  58.4%\nw4a16    triton   {\"layer\": \"qwen_down\", \"M\": 16, \"N\": 1536, \"K\": 8960}             44.3 us   172.6 GB/s  57.5%\nw4a16    triton   {\"layer\": \"8b_up\", \"M\": 1, \"N\": 14336, \"K\": 4096}                161.6 us   193.3 GB/s  64.4%\nw4a16    triton   {\"layer\": \"8b_up\", \"M\": 2, \"N\": 14336, \"K\": 4096}                162.3 us   192.6 GB/s  64.2%\nw4a16    triton   {\"layer\": \"8b_up\", \"M\": 4, \"N\": 14336, \"K\": 4096}                163.3 us   191.9 GB/s  64.0%\nw4a16    triton   {\"layer\": \"8b_up\", \"M\": 8, \"N\": 14336, \"K\": 4096}                166.6 us   189.0 GB/s  63.0%\nw4a16    triton   {\"layer\": \"8b_up\", \"M\": 16, \"N\": 14336, \"K\": 4096}               172.1 us   184.6 GB/s  61.5%\nw4a16    triton   {\"layer\": \"8b_down\", \"M\": 1, \"N\": 4096, \"K\": 14336}              128.6 us   242.9 GB/s  81.0%\nw4a16    triton   {\"layer\": \"8b_down\", \"M\": 2, \"N\": 4096, \"K\": 14336}              155.3 us   201.4 GB/s  67.1%\nw4a16    triton   {\"layer\": \"8b_down\", \"M\": 4, \"N\": 4096, \"K\": 14336}              160.4 us   195.5 GB/s  65.2%\nw4a16    triton   {\"layer\": \"8b_down\", \"M\": 8, \"N\": 4096, \"K\": 14336}              166.0 us   189.7 GB/s  63.2%\nw4a16    triton   {\"layer\": \"8b_down\", \"M\": 16, \"N\": 4096, \"K\": 14336}             173.8 us   182.9 GB/s  61.0%\nerrors: 0, finished: True",
+      "task": "bench",
+      "params": {
+        "run_id": "m3-decode-v3-triton",
+        "kernels": [
+          "w4a16_decode"
+        ],
+        "impls": [
+          "triton"
+        ],
+        "sweeps": 1,
+        "budget_s": 1347.0987124443054
+      },
+      "step_s": 71.2
+    }
+  ],
+  "ok": true,
+  "summary": "== pytest (106.9s) ==\n..................................                                       [100%]\n=============================== warnings summary ===============================\ntests/test_w4a16.py::test_gemv[1-64-256]\n  /usr/local/lib/python3.12/site-packages/triton/knobs.py:504: UserWarning: TRITON_DEFAULT_FP_FUSION is unset: defaulting to FP fusion ENABLED for backward compatibility in Triton 3.9. The default will change to DISABLED in Triton 3.10; set TRITON_DEFAULT_FP_FUSION=1 to keep fusion enabled or =0 to adopt the new default early and silence this warning.\n    warn_once(FP_FUSION_DEFAULT_WARNING)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n34 passed, 18 deselected, 1 warning in 102.32s (0:01:42)\n\n== power (16.0s) ==\ntriton      60.7 us  sm 1245 MHz  mem 6251 MHz  72/72 W  throttle ['0x0000000000000004']\ncuda        68.3 us  sm 1102 MHz  mem 6251 MHz  72/72 W  throttle ['0x0000000000000004']\nfp16       208.9 us  sm 1208 MHz  mem 6251 MHz  72/72 W  throttle ['0x0000000000000004']\n\n== bench (71.2s) ==\nw4a16    triton   {\"layer\": \"qwen_qkv\", \"M\": 1, \"N\": 2048, \"K\": 1536}               10.6 us   158.3 GB/s  52.8%\nw4a16    triton   {\"layer\": \"qwen_qkv\", \"M\": 2, \"N\": 2048, \"K\": 1536}               14.1 us   119.7 GB/s  39.9%\nw4a16    triton   {\"layer\": \"qwen_qkv\", \"M\": 4, \"N\": 2048, \"K\": 1536}               14.2 us   119.4 GB/s  39.8%\nw4a16    triton   {\"layer\": \"qwen_qkv\", \"M\": 8, \"N\": 2048, \"K\": 1536}               14.7 us   117.4 GB/s  39.1%\nw4a16    triton   {\"layer\": \"qwen_qkv\", \"M\": 16, \"N\": 2048, \"K\": 1536}              15.3 us   116.4 GB/s  38.8%\nw4a16    triton   {\"layer\": \"qwen_o\", \"M\": 1, \"N\": 1536, \"K\": 1536}                  9.0 us   139.5 GB/s  46.5%\nw4a16    triton   {\"layer\": \"qwen_o\", \"M\": 2, \"N\": 1536, \"K\": 1536}                 11.6 us   109.3 GB/s  36.4%\nw4a16    triton   {\"layer\": \"qwen_o\", \"M\": 4, \"N\": 1536, \"K\": 1536}                 12.7 us   100.8 GB/s  33.6%\nw4a16    triton   {\"layer\": \"qwen_o\", \"M\": 8, \"N\": 1536, \"K\": 1536}                 12.1 us   108.1 GB/s  36.0%\nw4a16    triton   {\"layer\": \"qwen_o\", \"M\": 16, \"N\": 1536, \"K\": 1536}                12.6 us   107.5 GB/s  35.8%\nw4a16    triton   {\"layer\": \"qwen_gate_up\", \"M\": 1, \"N\": 17920, \"K\": 1536}          60.4 us   242.8 GB/s  80.9%\nw4a16    triton   {\"layer\": \"qwen_gate_up\", \"M\": 2, \"N\": 17920, \"K\": 1536}          78.8 us   186.5 GB/s  62.2%\nw4a16    triton   {\"layer\": \"qwen_gate_up\", \"M\": 4, \"N\": 17920, \"K\": 1536}          80.4 us   183.9 GB/s  61.3%\nw4a16    triton   {\"layer\": \"qwen_gate_up\", \"M\": 8, \"N\": 17920, \"K\": 1536}          82.6 us   180.8 GB/s  60.3%\nw4a16    triton   {\"layer\": \"qwen_gate_up\", \"M\": 16, \"N\": 17920, \"K\": 1536}         85.9 us   177.5 GB/s  59.2%\nw4a16    triton   {\"layer\": \"qwen_down\", \"M\": 1, \"N\": 1536, \"K\": 8960}              34.2 us   214.7 GB/s  71.6%\nw4a16    triton   {\"layer\": \"qwen_down\", \"M\": 2, \"N\": 1536, \"K\": 8960}              41.1 us   179.0 GB/s  59.7%\nw4a16    triton   {\"layer\": \"qwen_down\", \"M\": 4, \"N\": 1536, \"K\": 8960}              41.7 us   177.4 GB/s  59.1%\nw4a16    triton   {\"layer\": \"qwen_down\", \"M\": 8, \"N\": 1536, \"K\": 8960}              42.7 us   175.2 GB/s  58.4%\nw4a16    triton   {\"layer\": \"qwen_down\", \"M\": 16, \"N\": 1536, \"K\": 8960}             44.3 us   172.6 GB/s  57.5%\nw4a16    triton   {\"layer\": \"8b_up\", \"M\": 1, \"N\": 14336, \"K\": 4096}                161.6 us   193.3 GB/s  64.4%\nw4a16    triton   {\"layer\": \"8b_up\", \"M\": 2, \"N\": 14336, \"K\": 4096}                162.3 us   192.6 GB/s  64.2%\nw4a16    triton   {\"layer\": \"8b_up\", \"M\": 4, \"N\": 14336, \"K\": 4096}                163.3 us   191.9 GB/s  64.0%\nw4a16    triton   {\"layer\": \"8b_up\", \"M\": 8, \"N\": 14336, \"K\": 4096}                166.6 us   189.0 GB/s  63.0%\nw4a16    triton   {\"layer\": \"8b_up\", \"M\": 16, \"N\": 14336, \"K\": 4096}               172.1 us   184.6 GB/s  61.5%\nw4a16    triton   {\"layer\": \"8b_down\", \"M\": 1, \"N\": 4096, \"K\": 14336}              128.6 us   242.9 GB/s  81.0%\nw4a16    triton   {\"layer\": \"8b_down\", \"M\": 2, \"N\": 4096, \"K\": 14336}              155.3 us   201.4 GB/s  67.1%\nw4a16    triton   {\"layer\": \"8b_down\", \"M\": 4, \"N\": 4096, \"K\": 14336}              160.4 us   195.5 GB/s  65.2%\nw4a16    triton   {\"layer\": \"8b_down\", \"M\": 8, \"N\": 4096, \"K\": 14336}              166.0 us   189.7 GB/s  63.2%\nw4a16    triton   {\"layer\": \"8b_down\", \"M\": 16, \"N\": 4096, \"K\": 14336}             173.8 us   182.9 GB/s  61.0%\nerrors: 0, finished: True",
+  "env": {
+    "python": "3.12.15",
+    "gpu_name": "NVIDIA L4",
+    "driver": "610.57.04",
+    "gpu_memory": "23034 MiB",
+    "max_sm_clock": "2040 MHz",
+    "max_mem_clock": "6251 MHz",
+    "torch": "2.15.0+cu132",
+    "torch_cuda": "13.2",
+    "triton": "3.9.0",
+    "capability": "8.9"
+  },
+  "task": "multi",
+  "params": {
+    "deadline_s": 1500,
+    "steps": [
+      {
+        "task": "pytest",
+        "args": "tests/test_w4a16.py -k \"gemv or autotuned_decode\""
+      },
+      {
+        "task": "power",
+        "seconds": 4
+      },
+      {
+        "task": "bench",
+        "run_id": "m3-decode-v3-triton",
+        "kernels": [
+          "w4a16_decode"
+        ],
+        "impls": [
+          "triton"
+        ],
+        "sweeps": 1
+      }
+    ]
+  },
+  "container_s": 197.9,
+  "container_wall_s": 197.9
+}
