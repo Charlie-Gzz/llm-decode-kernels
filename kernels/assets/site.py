@@ -320,6 +320,10 @@ def page_e2e(e2e):
              '(SDPA) and RoPE stay in fp16 on both sides. Both sides run the same small runner '
              'under CUDA graphs with a static KV cache, so the only difference is the kernels.</p>')
     body += section("Decode speed", chart("decode_tokens", "decode tokens/s"))
+    body += section("Where a decode token's time goes", chart("decode_breakdown", "breakdown"),
+                    "The swapped layers are timed alone in their own CUDA graph; the rest is the "
+                    "full step minus that. The fp16 lm_head (151936 x 1536) alone reads 0.47 GB "
+                    "per token, so it becomes the next thing to fix.")
     for g, res in e2e.items():
         b = res["backends"]
         rows = []
@@ -354,7 +358,9 @@ def page_e2e(e2e):
                          f'<div><div class="text-xs text-muted mb-1">fp16</div>{esc(a["text"])}</div>'
                          f'<div><div class="text-xs text-accent mb-1">4-bit, our kernels</div>'
                          f'{esc(o["text"])}</div></div></div>')
-            body += section(f"Greedy outputs ({g})", f'<div class="space-y-3">{outs}</div>')
+            body += section(f"Greedy outputs ({g})", f'<div class="space-y-3">{outs}</div>',
+                            "Greedy decoding, cut at 64 new tokens. The 1.5B model gets dates "
+                            "wrong in both versions; 4-bit changes the wording, not the gist.")
     return body
 
 

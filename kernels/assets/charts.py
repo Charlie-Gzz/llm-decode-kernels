@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 from kernels import config  # noqa: E402
 from kernels.assets import data  # noqa: E402
 from kernels.assets.style import (  # noqa: E402
+    ACCENT,
     MUTED,
     ROOT,
     SERIES,
@@ -363,6 +364,47 @@ def decode_tokens(e2e: dict):
     return _save(fig, "decode_tokens")
 
 
+def decode_breakdown(e2e: dict):
+    """Per-token decode time split into the swapped layers and everything else."""
+    gpus = [g for g in ("L4", "H100") if g in e2e]
+    rows = []
+    for g in gpus:
+        for key, label in (("fp16", "fp16"), ("ours", "4-bit, Triton")):
+            r = e2e[g]["backends"].get(key, {})
+            if "decode" in r and "layers_only_ms" in r:
+                total = r["decode"]["ms_per_token"]
+                rows.append((f"{g}  {label}", r["layers_only_ms"], total - r["layers_only_ms"]))
+    if not rows:
+        return []
+    fig, ax = plt.subplots(figsize=(8, 1.9 + 0.62 * len(rows)))
+    ys = list(range(len(rows)))
+    layers = [r[1] for r in rows]
+    rest = [r[2] for r in rows]
+    ax.barh(ys, layers, color=ACCENT, height=0.6, label="swapped layers (projections, norms, act)",
+            edgecolor=ax.get_facecolor(), linewidth=2)
+    ax.barh(ys, rest, left=layers, color=MUTED, height=0.6,
+            label="everything else (fp16 lm_head, attention, small ops)",
+            edgecolor=ax.get_facecolor(), linewidth=2)
+    for y, (_, a, b) in zip(ys, rows):
+        ax.text(a + b + 0.15, y, f"{a + b:.1f} ms", va="center", color=TEXT, fontsize=10,
+                family="JetBrains Mono")
+    ax.set_yticks(ys, [r[0] for r in rows])
+    ax.invert_yaxis()
+    ax.grid(axis="y", visible=False)
+    ax.set_xlabel("ms per decode token (batch 1)")
+    ax.set_xlim(0, max(a + b for _, a, b in rows) * 1.15)
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper left", ncol=1, fontsize=9,
+               bbox_to_anchor=(0.012, 0.86))
+    f, o = rows[0], rows[1] if len(rows) > 1 else rows[0]
+    fig.suptitle(f"Swapped layers got {f[1] / o[1]:.1f}x faster; the untouched {o[2]:.1f} ms "
+                 f"is now {100 * o[2] / (o[1] + o[2]):.0f}% of a token", x=0.012, ha="left",
+                 color=TEXT, fontsize=13, fontweight="semibold")
+    footnote(fig, "Qwen2.5-1.5B | CUDA graphs | layers timed alone, rest = total minus layers")
+    fig.tight_layout(rect=(0, 0.05, 1, 0.72))
+    return _save(fig, "decode_breakdown")
+
+
 def build_all() -> list:
     setup_matplotlib()
     rows = data.bench_rows()
@@ -376,6 +418,7 @@ def build_all() -> list:
         made += bandwidth_bars(rows, gpu)
         made += triton_vs_cuda(rows, gpu)
     made += decode_tokens(e2e)
+    made += decode_breakdown(e2e)
     return made
 
 
