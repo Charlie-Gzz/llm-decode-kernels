@@ -58,5 +58,15 @@ def split_choices() -> dict:
     return {str(k): v for k, v in _split_choice.items()}
 
 
+def export_choices() -> dict:
+    return {",".join(map(str, k)): v for k, v in _split_choice.items()}
+
+
+def import_choices(choices: dict) -> None:
+    for k, v in choices.items():
+        m, n, kk, b = k.split(",")
+        _split_choice[(int(m), int(n), int(kk), b == "True")] = v
+
+
 if __name__ == "__main__":
     print(torch.__version__, _ext())

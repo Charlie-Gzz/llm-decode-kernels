@@ -250,24 +250,14 @@ def run(params: dict) -> dict:
 
     for name in backends:
         print(f"[e2e] backend {name} ({time.time() - t0:.0f}s)")
-        runner = QwenRunner(hf, make_backend(name), max_len=2048)
-        r = {"weights": runner.weight_bytes()}
-        r["ppl"] = perplexity(runner_logits(runner), ids_ppl)
-        r["greedy"] = greedy_texts(runner, tok)
-        if name == "fp16":
-            with torch.no_grad():
-                ours = runner.forward(prompt, torch.arange(prompt.shape[1], device="cuda"))
-            r["parity_max_abs_logit_diff"] = (ours[:, -1].float() - hf_logits).abs().max().item()
-            dec = GraphDecoder(runner)
-            dec.capture(prompt)
-            toks, _ = dec.generate(prompt, 32)
-            r["parity_greedy_match"] = sum(a == b for a, b in zip(toks, hf_gen.tolist())) / 32
-        if name != "w4_ref":  # w4_ref is for quality only
-            r["decode"] = decode_speed(runner, prompt, decode_steps)
-            r["prefill"] = [prefill_speed(runner, T) for T in prefill_lens]
-            r["layers_only_ms"] = layers_only_ms(runner)
-        result["backends"][name] = r
-        del runner
+        try:
+            result["backends"][name] = _run_backend(name, hf, tok, prompt, ids_ppl, hf_logits,
+                                                    hf_gen, decode_steps, prefill_lens)
+        except Exception:  # one failing backend must not lose the others' (paid) results
+            import traceback
+
+            result.setdefault("errors", {})[name] = traceback.format_exc()[-3000:]
+            print(f"[e2e] backend {name} FAILED")
         gc.collect()
         torch.cuda.empty_cache()
 
@@ -281,6 +271,32 @@ def run(params: dict) -> dict:
         lines.append(f"{name:10s} ppl {r['ppl']:.3f}  decode {d.get('tok_s', 0):.1f} tok/s  "
                      f"layers {r.get('layers_only_ms', 0):.2f} ms  "
                      f"prefill {[round(p['tok_s']) for p in r.get('prefill', [])]}")
+    lines += [f"{n} ERROR: {e.splitlines()[-1]}" for n, e in result.get("errors", {}).items()]
     result["summary"] = "\n".join(lines) + f"\nHF ppl {result['hf_ppl']:.3f}"
-    result["ok"] = True
+    result["ok"] = not result.get("errors")
     return result
+
+
+def _run_backend(name, hf, tok, prompt, ids_ppl, hf_logits, hf_gen, decode_steps, prefill_lens):
+    runner = QwenRunner(hf, make_backend(name), max_len=2048)
+    try:
+        r = {"weights": runner.weight_bytes()}
+        r["ppl"] = perplexity(runner_logits(runner), ids_ppl)
+        r["greedy"] = greedy_texts(runner, tok)
+        if name == "fp16":
+            with torch.no_grad():
+                ours = runner.forward(prompt, torch.arange(prompt.shape[1], device="cuda"))
+            r["parity_max_abs_logit_diff"] = (ours[:, -1].float() - hf_logits).abs().max().item()
+            dec = GraphDecoder(runner)
+            dec.capture(prompt)
+            toks, _ = dec.generate(prompt, 32)
+            ref = hf_gen.tolist()  # HF may stop early at EOS
+            n = max(1, min(len(toks), len(ref)))
+            r["parity_greedy_match"] = sum(a == b for a, b in zip(toks, ref)) / n
+        if name != "w4_ref":  # w4_ref is for quality only
+            r["decode"] = decode_speed(runner, prompt, decode_steps)
+            r["prefill"] = [prefill_speed(runner, T) for T in prefill_lens]
+            r["layers_only_ms"] = layers_only_ms(runner)
+        return r
+    finally:
+        del runner

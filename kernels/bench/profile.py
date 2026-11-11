@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import torch
 
@@ -61,9 +63,40 @@ def _cases():
     return cases
 
 
+CHOICES = Path("/tmp/profile_choices.json")
+
+
+def _warm(cases):
+    for _, fn in cases:  # autotune, compile, pick paths / split-K
+        for _ in range(3):
+            fn()
+    torch.cuda.synchronize()
+
+
+def _save_choices():
+    """Decode-path and split-K choices are timed in-process; under ncu every launch is slowed
+    and serialized, so re-timing there picks badly (seen: split-K=1 with 12 blocks)."""
+    from kernels import w4a16
+    from kernels.cuda import w4a16_cuda
+
+    CHOICES.write_text(json.dumps({"triton": w4a16.export_choices(),
+                                   "cuda": w4a16_cuda.export_choices()}))
+
+
+def _load_choices():
+    from kernels import w4a16
+    from kernels.cuda import w4a16_cuda
+
+    if CHOICES.exists():
+        c = json.loads(CHOICES.read_text())
+        w4a16.import_choices(c["triton"])
+        w4a16_cuda.import_choices(c["cuda"])
+
+
 def target():
+    _load_choices()
     cases = _cases()
-    for _, fn in cases:  # warm up: autotune, compile, pick split-K
+    for _, fn in cases:  # warm up: autotune (cached on disk), compile
         for _ in range(3):
             fn()
     torch.cuda.synchronize()
@@ -123,6 +156,8 @@ def _torch_profiler() -> dict:
 
 
 def run(params: dict) -> dict:
+    _warm(_cases())  # make every timing-based choice here, outside ncu
+    _save_choices()
     res = _ncu()
     if not res["ok"]:
         fallback = _torch_profiler()

@@ -311,6 +311,18 @@ def w4a16_matmul(x, qweight, scales, zeros, group_size=128, bias=None, config=No
     return out.view(*x.shape[:-1], N)
 
 
+def export_choices() -> dict:
+    return {json_key: path for json_key, path in
+            ((",".join(map(str, k)), v) for k, v in _decode_choice.items())}
+
+
+def import_choices(choices: dict) -> None:
+    """Reuse decode-path choices made elsewhere (the profiler must not re-time under ncu)."""
+    for k, v in choices.items():
+        m, n, kk, b = k.split(",")
+        _decode_choice[(int(m), int(n), int(kk), b == "True")] = v
+
+
 def best_configs() -> dict:
     """Autotuner choices so far, for the results JSON."""
     out = {}
