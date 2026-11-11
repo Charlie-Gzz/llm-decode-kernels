@@ -63,6 +63,15 @@ def profile_results() -> dict:
     return out
 
 
+def power_results() -> dict:
+    out = {}
+    for path in sorted(RAW.glob("*.json")):
+        for t in _tasks(path):
+            if t.get("task") == "power" and t.get("kernels"):
+                out[_gpu(t)] = {**t, "file": path.name}
+    return out
+
+
 def select(rows, **match):
     """Rows whose fields (or shape fields) equal every keyword."""
     out = []

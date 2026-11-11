@@ -240,7 +240,7 @@ def page_elementwise(rows, gpus, prof, kernel):
     return body
 
 
-def page_w4a16(rows, gpus, prof):
+def page_w4a16(rows, gpus, prof, power=None):
     intro = ("Decode multiplies a few activation rows by every weight matrix in the model, so it "
              "is limited by how fast the weights stream from DRAM. Storing weights as 4-bit "
              "integers (8 per int32, fp16 scale and zero per group of 128) cuts those bytes ~3.6x. "
@@ -266,6 +266,19 @@ def page_w4a16(rows, gpus, prof):
                                         ["triton", "cuda", "fp16", "torchao", "compile", "naive"],
                                         "fp16"))
         body += section(f"Profile on {g}", profile_notes(prof.get(g), "w4a16"))
+        pw = (power or {}).get(g)
+        if pw:
+            prow = [[esc(k), f"{v['us_per_call']:.1f}", f"{v['sm_clock_mhz']:.0f}",
+                     f"{v['power_w']:.0f} / {v['power_limit_w']:.0f}",
+                     esc(", ".join(v["throttle_reasons"]))] for k, v in pw["kernels"].items()]
+            body += section(
+                f"Power on {g}",
+                table(["kernel (gate_up, M=1)", "us per call", "SM clock (MHz)", "power (W)",
+                       "throttle reasons"], prow),
+                "Sustained decode matmuls hold the card at its power cap (reason 0x4 = software "
+                "power cap) and the SM clock drops well below its maximum. That is why sustained "
+                "numbers sit below single-launch Nsight Compute numbers, and why cutting ALU work "
+                "in the dequantization (the factored GEMV) raised bandwidth.")
     return body
 
 
@@ -346,7 +359,7 @@ def build() -> list:
         "index.html": ("Overview", page_index(rows, e2e, gpus)),
         "rmsnorm.html": ("RMSNorm", page_elementwise(rows, gpus, prof, "rmsnorm")),
         "swiglu.html": ("SwiGLU", page_elementwise(rows, gpus, prof, "swiglu")),
-        "w4a16.html": ("W4A16 matmul", page_w4a16(rows, gpus, prof)),
+        "w4a16.html": ("W4A16 matmul", page_w4a16(rows, gpus, prof, data.power_results())),
         "e2e.html": ("End to end", page_e2e(e2e)),
         "cost.html": ("Cost", page_cost()),
     }
