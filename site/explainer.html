@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>W4A16 Kernel Explainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0F17; --panel: #131A26; --border: #1F2937; --text: #E5E7EB; --muted: #9CA3AF;
+    --accent: #A3E635; --sky: #38BDF8; --amber: #F59E0B;
+  }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, sans-serif; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 16px; }
+  svg { width: 100%; height: auto; display: block; }
+  .mono { font-family: "JetBrains Mono", monospace; }
+  .controls { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 14px; margin-top: 8px; }
+  button { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  body.capture .controls { display: none; }
+  body.capture .wrap { padding: 0; max-width: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <svg id="stage" viewBox="0 0 1200 675" role="img" aria-labelledby="t d">
+    <title id="t">How the W4A16 kernel processes one K tile</title>
+    <desc id="d">Packed int4 weights are loaded from DRAM as int32 words, unpacked into 4-bit values in registers, dequantized with the group's scale and zero, then multiplied with the activations on tensor cores and accumulated in fp32.</desc>
+  </svg>
+  <div class="controls"><button id="pp">Pause</button><span>One K tile of the W4A16 kernel, looped.</span></div>
+</div>
+<script>
+const NS = "http://www.w3.org/2000/svg";
+const C = { bg: "#0B0F17", panel: "#131A26", border: "#1F2937", text: "#E5E7EB", muted: "#9CA3AF",
+            accent: "#A3E635", sky: "#38BDF8", amber: "#F59E0B" };
+const svg = document.getElementById("stage");
+
+function el(tag, attrs, parent = svg, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text !== undefined) e.textContent = text;
+  parent.appendChild(e);
+  return e;
+}
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => { x = clamp(x); return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2; };
+const phase = (t, a, b) => ease((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+function mix(c1, c2, k) {
+  const p = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  const [a, b] = [p(c1), p(c2)];
+  return "#" + a.map((v, i) => Math.round(lerp(v, b[i], k)).toString(16).padStart(2, "0")).join("");
+}
+
+// Deterministic nibbles: 2 packed rows x 4 columns -> 16 K values x 4 columns.
+let seed = 7;
+const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+const COLS = 4, PROWS = 2, K = 16;
+const q = Array.from({ length: K }, () => Array.from({ length: COLS }, () => Math.floor(rnd() * 16)));
+const zero = [8, 7, 8, 9], scale = [0.012, 0.009, 0.011, 0.010];
+const x = Array.from({ length: K }, () => rnd() * 2 - 1);
+const acc = Array.from({ length: COLS }, (_, n) =>
+  q.reduce((s, row, k) => s + (row[n] - zero[n]) * scale[n] * x[k], 0));
+const word = (pr, n) => {
+  let v = 0;
+  for (let i = 7; i >= 0; i--) v = v * 16 + q[pr * 8 + i][n];
+  return "0x" + v.toString(16).toUpperCase().padStart(8, "0");
+};
+
+// ---------------------------------------------------------------- static frame
+el("rect", { x: 0, y: 0, width: 1200, height: 675, fill: C.bg });
+el("text", { x: 40, y: 54, fill: C.text, "font-size": 26, "font-weight": 700 }, svg, "How the W4A16 kernel works");
+const caption = el("text", { x: 40, y: 86, fill: C.muted, "font-size": 16 }, svg, "");
+const stepLabel = el("text", { x: 1160, y: 54, fill: C.accent, "font-size": 15, "text-anchor": "end", class: "mono" }, svg, "");
+
+function panel(x0, y0, w, h, title, sub) {
+  el("rect", { x: x0, y: y0, width: w, height: h, rx: 10, fill: C.panel, stroke: C.border });
+  el("text", { x: x0 + 16, y: y0 + 28, fill: C.text, "font-size": 15, "font-weight": 600 }, svg, title);
+  el("text", { x: x0 + 16, y: y0 + 48, fill: C.muted, "font-size": 12, class: "mono" }, svg, sub);
+}
+panel(40, 120, 300, 440, "DRAM: packed weights", "int32 [K/8, N], 8 x 4-bit each");
+panel(370, 120, 440, 440, "Registers: one K tile", "unpack, then (q - zero) * scale");
+panel(840, 120, 320, 440, "Tensor cores", "acc += x_tile @ w_tile (fp32)");
+
+// DRAM grid: 8 packed rows x 6 columns of int32 words; the tile is rows r0..r0+1, cols 1..4.
+const dram = [];
+for (let r = 0; r < 8; r++) for (let c = 0; c < 6; c++) {
+  dram.push({ r, c, e: el("rect", { x: 60 + c * 44, y: 190 + r * 42, width: 38, height: 34, rx: 4, fill: C.bg, stroke: C.border }) });
+}
+const dramNote = el("text", { x: 60, y: 545, fill: C.muted, "font-size": 12, class: "mono" }, svg, "");
+
+// Moving tile: 2 x 4 words with hex text.
+const tileWords = [];
+for (let pr = 0; pr < PROWS; pr++) for (let n = 0; n < COLS; n++) {
+  const g = el("g", {});
+  const r = el("rect", { width: 92, height: 30, rx: 4, fill: mix(C.bg, C.sky, 0.25), stroke: C.sky }, g);
+  const t = el("text", { x: 46, y: 20, fill: C.text, "font-size": 11, "text-anchor": "middle", class: "mono" }, g, word(pr, n));
+  tileWords.push({ pr, n, g, r, t });
+}
+
+// Unpacked nibble grid: 16 rows (K) x 4 cols (N) inside the registers panel.
+const cellW = 92, cellH = 19, gx = 400, gy = 180;
+const cells = [];
+for (let k = 0; k < K; k++) for (let n = 0; n < COLS; n++) {
+  const g = el("g", { opacity: 0 });
+  const r = el("rect", { x: gx + n * (cellW + 6), y: gy + k * (cellH + 2), width: cellW, height: cellH, rx: 3, fill: C.bg, stroke: C.border }, g);
+  const t = el("text", { x: gx + n * (cellW + 6) + cellW / 2, y: gy + k * (cellH + 2) + 15, fill: C.text, "font-size": 11, "text-anchor": "middle", class: "mono" }, g, "");
+  cells.push({ k, n, g, r, t });
+}
+const formula = el("text", { x: 590, y: 548, fill: C.muted, "font-size": 12, "text-anchor": "middle", class: "mono" }, svg, "");
+
+// Tensor-core panel: activation strip + accumulator bars.
+el("text", { x: 860, y: 196, fill: C.muted, "font-size": 12 }, svg, "activations x (fp16), this K tile");
+const xs = [];
+for (let k = 0; k < K; k++) {
+  xs.push(el("rect", { x: 860 + k * 17.5, y: 206, width: 15, height: 26, rx: 2, fill: x[k] > 0 ? mix(C.panel, C.text, 0.15 + 0.6 * x[k]) : mix(C.panel, C.muted, 0.15 - 0.5 * x[k]) }));
+}
+el("text", { x: 860, y: 282, fill: C.muted, "font-size": 12 }, svg, "fp32 accumulators, 4 output columns");
+const base = 440, maxAcc = Math.max(...acc.map(Math.abs));
+el("line", { x1: 860, x2: 1140, y1: base, y2: base, stroke: C.border, "stroke-width": 1 });
+const bars = acc.map((_, n) => el("rect", { x: 880 + n * 66, width: 46, y: base, height: 0, rx: 4, fill: C.accent }));
+const barLabels = acc.map((_, n) => el("text", { x: 903 + n * 66, y: base + 22, fill: C.muted, "font-size": 11, "text-anchor": "middle", class: "mono" }, svg, ""));
+const kLabel = el("text", { x: 860, y: 494, fill: C.text, "font-size": 14, class: "mono" }, svg, "");
+el("text", { x: 860, y: 540, fill: C.muted, "font-size": 11, class: "mono" }, svg, "drawn: K=64, BLOCK_K=16 (real: 64-128)");
+const kBarBg = el("rect", { x: 860, y: 506, width: 280, height: 6, rx: 3, fill: C.border });
+const kBar = el("rect", { x: 860, y: 506, width: 0, height: 6, rx: 3, fill: C.accent });
+
+const foot = el("text", { x: 40, y: 615, fill: C.text, "font-size": 16 }, svg, "");
+el("text", { x: 40, y: 643, fill: C.muted, "font-size": 13 }, svg,
+  "Decode is memory-bound: 4-bit weights move 4x fewer bytes than fp16. The fp16 weights only ever exist in registers.");
+
+// ---------------------------------------------------------------- frame function
+const STEPS = [
+  [0.00, "1  Load", "Load a [K/8, N] tile of packed int32 words from DRAM (one 16-byte load per lane)."],
+  [0.22, "2  Unpack", "Each int32 holds 8 consecutive K values: (word >> 4i) & 0xF."],
+  [0.42, "3  Dequantize", "Apply the group's fp16 scale and zero: w = (q - zero) * scale."],
+  [0.62, "4  Multiply-accumulate", "Feed tensor cores: acc += x_tile @ w_tile, accumulated in fp32."],
+  [0.86, "5  Next K tile", "Move to the next K tile. Split-K gives each program its own K range."],
+];
+
+function render(t) {
+  t = ((t % 1) + 1) % 1;
+  let s = 0;
+  for (let i = 0; i < STEPS.length; i++) if (t >= STEPS[i][0]) s = i;
+  stepLabel.textContent = STEPS[s][1];
+  caption.textContent = STEPS[s][2];
+
+  const tileIndex = t >= 0.92 ? 1 : 0;  // tile moves down during step 5
+  const r0 = 2 * tileIndex;
+  const pulse = phase(t, 0.0, 0.08);
+  for (const d of dram) {
+    const inTile = d.r >= r0 && d.r < r0 + 2 && d.c >= 1 && d.c <= 4;
+    const done = d.r < r0 && d.c >= 1 && d.c <= 4;
+    d.e.setAttribute("fill", inTile ? mix(C.bg, C.sky, 0.35 * pulse + 0.1) : done ? mix(C.bg, C.accent, 0.12) : C.bg);
+    d.e.setAttribute("stroke", inTile ? C.sky : C.border);
+  }
+  dramNote.textContent = `K tile rows ${r0 * 8}..${r0 * 8 + 15}`;
+
+  // 1: words fly from DRAM to registers
+  const fly = phase(t, 0.06, 0.2);
+  const unpack = phase(t, 0.22, 0.38);
+  for (const w of tileWords) {
+    const sx = 60 + (w.n + 1) * 44, sy = 190 + (r0 + w.pr) * 42 + 2;
+    const tx = gx + w.n * (cellW + 6), ty = gy + w.pr * 8 * (cellH + 2) + 3.5 * (cellH + 2);
+    const sc = lerp(0.42, 1, fly);
+    w.g.setAttribute("transform", `translate(${lerp(sx, tx, fly)},${lerp(sy, ty, fly)}) scale(${sc})`);
+    w.g.setAttribute("opacity", t < 0.04 || t > 0.9 ? 0 : 1 - unpack);
+  }
+
+  // 2-3: nibbles appear, then dequantize
+  const deq = phase(t, 0.42, 0.58);
+  for (const c of cells) {
+    const appear = phase(t, 0.22 + (c.k % 8) * 0.012, 0.3 + (c.k % 8) * 0.012);
+    c.g.setAttribute("opacity", t > 0.94 ? 0 : appear);
+    const v = q[c.k][c.n];
+    const w = (v - zero[c.n]) * scale[c.n];
+    c.t.textContent = deq < 0.5 ? `q=${v.toString(16).toUpperCase()}` : (w >= 0 ? "+" : "") + w.toFixed(3);
+    const tint = Math.min(1, Math.abs(w) / 0.1);
+    c.r.setAttribute("fill", mix(C.bg, w >= 0 ? C.accent : C.amber, deq * (0.12 + 0.35 * tint)));
+    c.r.setAttribute("stroke", deq > 0.5 ? mix(C.border, C.accent, 0.3) : C.border);
+  }
+  formula.textContent = t < 0.22 ? "" : t < 0.42 ? "q = (word >> 4i) & 0xF" : "w = (q - zero[g, n]) * scale[g, n]";
+
+  // 4: multiply-accumulate
+  const mac = phase(t, 0.62, 0.84);
+  xs.forEach((r, k) => r.setAttribute("stroke", mac > 0 && mac < 1 && Math.floor(mac * K) === k ? C.accent : "none"));
+  const prev = tileIndex === 1 ? 1 : 0;
+  acc.forEach((a, n) => {
+    const v = a * (prev + (tileIndex === 0 ? mac : 0)) / maxAcc;
+    const h = Math.abs(v) * 70;
+    bars[n].setAttribute("y", v >= 0 ? base - h : base);
+    bars[n].setAttribute("height", h);
+    bars[n].setAttribute("fill", v >= 0 ? C.accent : C.amber);
+    barLabels[n].textContent = `n${n}`;
+  });
+  const kt = tileIndex + 1;
+  kLabel.textContent = `K tile ${kt} of 4`;
+  kBar.setAttribute("width", 280 * (kt - 1 + (tileIndex === 0 ? mac : 0)) / 4);
+  foot.textContent = "One program owns a [BLOCK_M, BLOCK_N] output tile and loops over K like this.";
+}
+
+let start = performance.now(), paused = false, pausedAt = 0;
+const DURATION = 10000;
+function loop(now) {
+  if (!paused) render(((now - start) % DURATION) / DURATION);
+  requestAnimationFrame(loop);
+}
+document.getElementById("pp").onclick = (e) => {
+  paused = !paused;
+  if (paused) pausedAt = performance.now(); else start += performance.now() - pausedAt;
+  e.target.textContent = paused ? "Play" : "Pause";
+};
+if (new URLSearchParams(location.search).has("capture")) {
+  document.body.classList.add("capture");
+  window.render = render;
+  render(0);
+} else {
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
