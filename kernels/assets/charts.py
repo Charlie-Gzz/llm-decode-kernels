@@ -148,7 +148,7 @@ def speedup_w4a16(rows, gpu: str):
     for j in range(len(order), nrow * ncol):
         axes[j // ncol][j % ncol].axis("off")
     handles, labels = axes[0][0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=len(labels), bbox_to_anchor=(0.5, 0.93),
+    fig.legend(handles, labels, loc="upper center", ncol=len(labels), bbox_to_anchor=(0.5, 0.875),
                fontsize=9)
     dmed = statistics.median(decode_speedups) if decode_speedups else 0
     title = f"4-bit Triton matmul is {dmed:.1f}x faster than fp16 cuBLAS at decode (median)"
@@ -158,7 +158,7 @@ def speedup_w4a16(rows, gpu: str):
         title += f"\nand {verdict} at prefill ({pmed:.2f}x median)"
     fig.suptitle(title, x=0.012, ha="left", color=TEXT, fontsize=13, fontweight="semibold")
     footnote(fig, _gpu_note(gpu, "group size 128 | higher is better"))
-    fig.tight_layout(rect=(0, 0.04, 1, 0.88))
+    fig.tight_layout(rect=(0, 0.04, 1, 0.84))
     return _save(fig, f"speedup_w4a16_{gpu.lower()}")
 
 
@@ -274,7 +274,7 @@ def bandwidth_bars(rows, gpu: str):
     ax.set_xlabel(f"% of {spec['peak_gbps']:.0f} GB/s spec-sheet bandwidth")
     ax.grid(axis="y", visible=False)
     top = bars[-1]
-    ax.set_title(f"{top[0]} moves data at {top[2]:.0f}% of the {gpu}'s peak bandwidth",
+    ax.set_title(f"{top[0]}: {top[2]:.0f}% of the {gpu}'s peak bandwidth",
                  fontsize=13)
     footnote(fig, f"{gpu} | fp16 | minimum bytes / time | dashed = plain device-to-device copy")
     fig.tight_layout(rect=(0, 0.05, 1, 1))
@@ -317,7 +317,9 @@ def triton_vs_cuda(rows, gpu: str):
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper right", ncol=2, bbox_to_anchor=(0.99, 0.86))
     (t1, c1), (t16, c16) = med[1], med[16]
-    fig.suptitle(f"Batch 1: CUDA C++ {c1:.0f}% vs Triton {t1:.0f}% of peak bandwidth.\n"
+    first = (f"Batch 1: Triton {t1:.0f}% vs CUDA C++ {c1:.0f}%" if t1 >= c1 else
+             f"Batch 1: CUDA C++ {c1:.0f}% vs Triton {t1:.0f}%")
+    fig.suptitle(f"{first} of peak bandwidth.\n"
                  f"Batch 16: Triton holds {t16:.0f}%, CUDA drops to {c16:.0f}% (medians)",
                  x=0.012, ha="left", color=TEXT, fontsize=13, fontweight="semibold")
     footnote(fig, _gpu_note(gpu, "int4 weights, group 128"))

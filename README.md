@@ -5,7 +5,7 @@ Triton and CUDA kernels for the slow parts of LLM decoding: fused RMSNorm, fused
 swapped into Qwen2.5-1.5B.
 
 <!-- gen:headline -->
-**4-bit decode matmul reaches 81% of peak memory bandwidth on L4, for 1.82x faster decoding than fp16 on Qwen2.5-1.5B.**
+**4-bit decode matmul reaches 82% of peak memory bandwidth on L4, for 1.99x faster decoding than fp16 on Qwen2.5-1.5B.**
 <!-- /gen:headline -->
 
 ![How the 4-bit matmul works](assets/explainer.gif)
@@ -23,9 +23,9 @@ swapped into Qwen2.5-1.5B.
 <!-- gen:e2e -->
 | GPU | Backend | Decode tok/s (batch 1) | Swapped layers, ms/token | Prefill tok/s (T=2048) | WikiText-2 ppl | Linear weights |
 |---|---|---|---|---|---|---|
-| L4 | fp16 | 57.9 | 11.47 | 11886 | 10.654 | 2.62 GB |
-| L4 | ours | 105.5 | 3.94 | 11592 | 11.900 | 0.70 GB |
-| L4 | ours_cuda | 109.0 | 3.72 | 11751 | 11.900 | 0.70 GB |
+| L4 | fp16 | 59.5 | 11.36 | 12409 | 10.654 | 2.62 GB |
+| L4 | ours | 118.2 | 3.28 | 12346 | 11.900 | 0.70 GB |
+| L4 | ours_cuda | 114.4 | 3.62 | 12262 | 11.900 | 0.70 GB |
 | L4 | w4_ref | - | - | - | 11.901 | 0.70 GB |
 <!-- /gen:e2e -->
 
@@ -34,15 +34,15 @@ swapped into Qwen2.5-1.5B.
 <!-- gen:w4a16 -->
 | Layer (N x K) | M | GPU | Triton (us) | CUDA (us) | fp16 cuBLAS (us) | torchao (us) | torch.compile (us) | Triton vs fp16 | Triton % peak BW |
 |---|---|---|---|---|---|---|---|---|---|
-| qwen_gate_up (17920x1536) | 1 | L4 | 60.4 | 67.3 | 209.3 | 79.2 | 83.1 | 3.47x | 81% |
-| qwen_gate_up (17920x1536) | 16 | L4 | 85.9 | 168.3 | 218.4 | 144.9 | 446.6 | 2.54x | 59% |
-| qwen_gate_up (17920x1536) | 2048 | L4 | 2572.1 | - | 2117.1 | 14494.4 | 2416.1 | 0.82x | 12% |
-| qwen_down (1536x8960) | 1 | L4 | 34.2 | 37.9 | 104.2 | 34.2 | 45.9 | 3.05x | 72% |
-| qwen_down (1536x8960) | 16 | L4 | 44.3 | 99.3 | 115.1 | 84.9 | 170.6 | 2.60x | 58% |
-| qwen_down (1536x8960) | 2048 | L4 | 1344.9 | - | 1282.4 | 8153.3 | 1478.8 | 0.95x | 12% |
-| 8b_up (14336x4096) | 1 | L4 | 161.6 | 133.0 | 430.7 | 123.7 | 148.2 | 2.67x | 64% |
-| 8b_up (14336x4096) | 16 | L4 | 172.1 | 343.7 | 481.3 | 296.1 | 1156.5 | 2.80x | 62% |
-| 8b_up (14336x4096) | 2048 | L4 | 5184.9 | - | 4574.0 | 28792.3 | 5305.3 | 0.88x | 7% |
+| qwen_gate_up (17920x1536) | 1 | L4 | 59.9 | 65.7 | 207.8 | 78.5 | 82.6 | 3.47x | 82% |
+| qwen_gate_up (17920x1536) | 16 | L4 | 79.2 | 164.9 | 226.5 | 141.5 | 443.3 | 2.86x | 64% |
+| qwen_gate_up (17920x1536) | 2048 | L4 | 2485.1 | - | 2083.7 | 14076.1 | 2372.4 | 0.84x | 13% |
+| qwen_down (1536x8960) | 1 | L4 | 33.6 | 37.6 | 102.8 | 34.1 | 44.3 | 3.06x | 73% |
+| qwen_down (1536x8960) | 16 | L4 | 42.1 | 95.7 | 111.2 | 81.9 | 167.4 | 2.64x | 61% |
+| qwen_down (1536x8960) | 2048 | L4 | 1320.1 | - | 1284.1 | 7906.2 | 1435.3 | 0.97x | 13% |
+| 8b_up (14336x4096) | 1 | L4 | 123.9 | 131.7 | 429.9 | 123.3 | 144.2 | 3.47x | 84% |
+| 8b_up (14336x4096) | 16 | L4 | 160.9 | 313.9 | 464.4 | 282.4 | 1152.5 | 2.89x | 66% |
+| 8b_up (14336x4096) | 2048 | L4 | 5025.5 | - | 4472.1 | 28082.2 | 5152.9 | 0.89x | 7% |
 <!-- /gen:w4a16 -->
 
 ### Fused RMSNorm and SwiGLU
@@ -50,22 +50,22 @@ swapped into Qwen2.5-1.5B.
 <!-- gen:kernels -->
 | Kernel | Shape | GPU | Ours (us) | PyTorch eager (us) | torch.compile (us) | Speedup vs eager | % peak BW |
 |---|---|---|---|---|---|---|---|
-| RMSNorm + residual | N=4096, M=16384 | L4 | 2282.5 | 12019.0 | 2209.5 | 5.27x | 78% |
-| RMSNorm + residual | N=1536, M=1 | L4 | 1.3 | 10.3 | 1.3 | 7.79x | 4% |
-| SwiGLU | I=8960, M=4096 | L4 | 933.0 | 1561.5 | 941.1 | 1.67x | 79% |
-| SwiGLU | I=8960, M=1 | L4 | 1.1 | 2.7 | 1.0 | 2.43x | 16% |
+| RMSNorm + residual | N=4096, M=16384 | L4 | 2277.1 | 12021.2 | 2212.1 | 5.28x | 79% |
+| RMSNorm + residual | N=1536, M=1 | L4 | 1.3 | 10.2 | 1.3 | 7.80x | 4% |
+| SwiGLU | I=8960, M=4096 | L4 | 932.4 | 1559.0 | 879.3 | 1.67x | 79% |
+| SwiGLU | I=8960, M=1 | L4 | 1.1 | 2.7 | 1.0 | 2.46x | 16% |
 <!-- /gen:kernels -->
 
 Times are CUDA-graph medians of 3 sweeps, with enough rotating input copies that every call reads
 from DRAM (working set at least 4x the L2 cache).
 <!-- gen:spread -->
-Median spread between the 3 sweeps: 0.8%. 9 of 375 measurements spread more than 10% (marked in the site tables).
+Median spread between the 3 sweeps: 0.3%. 0 of 375 measurements spread more than 10% (marked in the site tables).
 <!-- /gen:spread -->
 
 ### Cost
 
 <!-- gen:cost -->
-Total GPU time: **1.18 GPU-hours**, estimated **$1.09** (cap $30), of which H100: 0 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
+Total GPU time: **1.80 GPU-hours**, estimated **$1.66** (cap $30), of which H100: 0 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
 <!-- /gen:cost -->
 
 ## Quickstart

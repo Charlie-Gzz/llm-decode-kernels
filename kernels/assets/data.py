@@ -35,7 +35,9 @@ def bench_rows() -> list[dict]:
             if t.get("task") != "bench" or "results" not in t:
                 continue
             run_id = t.get("run_id", "")
-            rank = (run_id.startswith("final"), path.name)
+            # final runs beat dev runs; a later final run_id ("final2") beats "final"; then newest
+            rank = (run_id.startswith("final"), run_id if run_id.startswith("final") else "",
+                    path.name)
             for r in t["results"]:
                 row = {**r, "gpu": _gpu(t), "run_id": run_id, "env": t.get("env", {})}
                 key = (row["gpu"], r["kernel"], r["impl"], json.dumps(r["shape"], sort_keys=True))
