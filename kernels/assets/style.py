@@ -64,7 +64,7 @@ def setup_matplotlib():
         "legend.fontsize": 10,
         "lines.linewidth": 2,
         "lines.markersize": 7,
-        "svg.fonttype": "none",
+        "svg.fonttype": "path",  # SVGs in <img> cannot use page web fonts
     })
 
 

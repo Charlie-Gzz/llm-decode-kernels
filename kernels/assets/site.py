@@ -90,7 +90,7 @@ def chart(name: str, alt: str) -> str:
     if not (SITE / "charts" / f"{name}.svg").exists():
         return f'<p class="text-muted text-sm">Chart {esc(name)} not generated yet (no results).</p>'
     return (f'<figure class="chart"><a href="charts/{name}.png">'
-            f'<img src="charts/{name}.svg" alt="{esc(alt)}" loading="lazy"></a></figure>')
+            f'<img src="charts/{name}.svg" alt="{esc(alt)}"></a></figure>')
 
 
 def section(title: str, inner: str, intro: str = "") -> str:
@@ -106,9 +106,40 @@ def code_excerpt(path, func: str, max_lines: int = 60) -> str:
         m = re.search(rf"[^\n]*{func}.*?(?=\n\}}\n)", src, re.S)
     text = m.group(0) if m else f"# {func} not found"
     lines = text.splitlines()[:max_lines]
-    return (f'<div class="bg-panel border border-line rounded-xl overflow-x-auto">'
-            f'<div class="px-4 py-2 text-xs text-muted border-b border-line font-mono">{esc(path)}</div>'
-            f'<pre class="p-4"><code class="font-mono">{esc(chr(10).join(lines))}</code></pre></div>')
+    return (f'<details class="bg-panel border border-line rounded-xl overflow-x-auto">'
+            f'<summary class="px-4 py-2 text-sm text-muted cursor-pointer font-mono">{esc(path)}: '
+            f'{esc(func)} ({len(lines)} lines, click to show)</summary>'
+            f'<pre class="p-4 border-t border-line"><code class="font-mono">'
+            f'{esc(chr(10).join(lines))}</code></pre></details>')
+
+
+def md(text: str) -> str:
+    """Tiny Markdown subset for the docs we embed: paragraphs, '- ' lists, **bold**, `code`."""
+    def inline(s):
+        s = esc(s)
+        s = re.sub(r"\*\*(.+?)\*\*", r"<strong class='text-ink'>\1</strong>", s)
+        return re.sub(r"`(.+?)`", r"<code class='font-mono text-ink'>\1</code>", s)
+
+    out = []
+    for block in text.strip().split("\n\n"):
+        if block.startswith("# "):
+            continue
+        lines = block.splitlines()
+        if all(line.startswith("- ") for line in lines):
+            items = "".join(f"<li>{inline(line[2:])}</li>" for line in lines)
+            out.append(f"<ul class='list-disc pl-5 space-y-1'>{items}</ul>")
+        else:
+            out.append(f"<p>{inline(' '.join(lines))}</p>")
+    return "".join(out)
+
+
+def nvtx_label(k: dict) -> str:
+    """'422 "<default domain>:w4a16_triton_gate_up_M1:none:...' -> 'w4a16_triton_gate_up_M1'."""
+    raw = k.get("nvtx") or ""
+    m = re.search(r":([A-Za-z0-9_]+):", raw)
+    if m:
+        return m.group(1)
+    return k.get("kernel", "")[:40]
 
 
 def table(headers, rows) -> str:
@@ -153,7 +184,7 @@ def profile_notes(prof: dict, prefix: str) -> str:
     if not ks:
         return '<p class="text-muted text-sm">No profiled launches for this kernel.</p>'
     if prof["tool"] == "ncu":
-        rows = [[esc(k.get("nvtx") or k["kernel"][:40]),
+        rows = [[esc(nvtx_label(k)),
                  esc(k.get("gpu__time_duration.sum", "")),
                  esc(k.get("dram__throughput.avg.pct_of_peak_sustained_elapsed", "")),
                  esc(k.get("sm__throughput.avg.pct_of_peak_sustained_elapsed", "")),
@@ -169,10 +200,10 @@ def profile_notes(prof: dict, prefix: str) -> str:
 def page_index(rows, e2e, gpus):
     cards = []
     l4 = "L4"
-    r = data.one(rows, gpu=l4, kernel="w4a16", impl="triton", layer="8b_up", M=1)
+    r = data.one(rows, gpu=l4, kernel="w4a16", impl="triton", layer="qwen_gate_up", M=1)
     if r:
         cards.append(card(f"{r['pct_peak_bw']:.0f}%", "of L4 peak bandwidth",
-                          "W4A16 Triton, batch 1, 14336x4096"))
+                          "W4A16 Triton, batch 1, Qwen gate_up 17920x1536"))
     if l4 in e2e and "ours" in e2e[l4]["backends"]:
         b = e2e[l4]["backends"]
         sp = b["ours"]["decode"]["tok_s"] / b["fp16"]["decode"]["tok_s"]
@@ -254,7 +285,7 @@ def page_w4a16(rows, gpus, prof, power=None):
     note = ROOT / "docs" / "TRITON_VS_CUDA.md"
     if note.exists():
         body += section("Triton or CUDA?", '<div class="text-muted max-w-3xl space-y-2">'
-                        + "".join(f"<p>{esc(p)}</p>" for p in note.read_text().split("\n\n")[1:])
+                        + md(note.read_text())
                         + "</div>")
     for g in gpus:
         r = data.select(rows, gpu=g)

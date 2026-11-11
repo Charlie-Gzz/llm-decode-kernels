@@ -22,7 +22,7 @@ def _fmt(v, spec=".1f", none="-"):
 
 def headline(rows, e2e) -> str:
     gpu = "L4"
-    r = data.one(rows, gpu=gpu, kernel="w4a16", impl="triton", layer="8b_up", M=1)
+    r = data.one(rows, gpu=gpu, kernel="w4a16", impl="triton", layer="qwen_gate_up", M=1)
     b = e2e.get(gpu, {}).get("backends", {})
     if not r or "ours" not in b:
         return "_Headline pending: results not in yet._"

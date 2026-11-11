@@ -188,11 +188,11 @@ def _points(rows, gpu):
         add("SwiGLU", "triton", sw, ELEMWISE_FLOPS["swiglu"] * sw["shape"]["M"] * sw["shape"]["I"])
     for M in (1, 16, 2048):
         add(f"W4A16 M={M}", "triton", data.one(rows, gpu=gpu, kernel="w4a16", impl="triton",
-                                               layer="8b_up", M=M))
+                                               layer="qwen_gate_up", M=M))
         add(f"fp16 M={M}", "fp16", data.one(rows, gpu=gpu, kernel="w4a16", impl="fp16",
-                                            layer="8b_up", M=M))
+                                            layer="qwen_gate_up", M=M))
     add("W4A16 CUDA M=1", "cuda", data.one(rows, gpu=gpu, kernel="w4a16", impl="cuda",
-                                          layer="8b_up", M=1))
+                                          layer="qwen_gate_up", M=1))
     return pts
 
 
@@ -235,8 +235,8 @@ def roofline(rows, gpu: str):
     if best:
         title += f"\nW4A16 at batch 1 reaches {best:.0f}% of peak bandwidth"
     ax.set_title(title, fontsize=13)
-    footnote(fig, f"{gpu} | fp16 | filled = ours, hollow = fp16 cuBLAS | matmul shape 14336x4096 "
-                  "| elementwise FLOPs approximate")
+    footnote(fig, f"{gpu} | fp16 | filled = ours, hollow = fp16 cuBLAS | matmul 17920x1536 "
+                  "(Qwen gate_up) | elementwise FLOPs approximate")
     fig.tight_layout(rect=(0, 0.04, 1, 1))
     return _save(fig, f"roofline_{gpu.lower()}")
 
@@ -248,12 +248,12 @@ def bandwidth_bars(rows, gpu: str):
     copy = data.one(rows, gpu=gpu, kernel="copy")
     for label, impl, r, _ in _points(rows, gpu):
         if impl != "fp16" and "2048" not in label:
-            name = label.replace("W4A16", "W4A16 8b_up").replace(" CUDA", "")
+            name = label.replace("W4A16", "W4A16 gate_up").replace(" CUDA", "")
             bars.append((name + (" (CUDA)" if impl == "cuda" else ""), impl, r["pct_peak_bw"]))
-    for layer in ("qwen_gate_up", "qwen_down"):
+    for layer in ("qwen_down", "8b_up"):
         r = data.one(rows, gpu=gpu, kernel="w4a16", impl="triton", layer=layer, M=1)
         if r:
-            bars.append((f"W4A16 {layer[5:]} M=1", "triton", r["pct_peak_bw"]))
+            bars.append((f"W4A16 {layer.replace('qwen_', '')} M=1", "triton", r["pct_peak_bw"]))
     if not bars:
         return []
     bars.sort(key=lambda b: b[2])

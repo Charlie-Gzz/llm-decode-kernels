@@ -5,7 +5,7 @@ Triton and CUDA kernels for the slow parts of LLM decoding: fused RMSNorm, fused
 swapped into Qwen2.5-1.5B.
 
 <!-- gen:headline -->
-**4-bit decode matmul reaches 64% of peak memory bandwidth on L4, for 1.82x faster decoding than fp16 on Qwen2.5-1.5B.**
+**4-bit decode matmul reaches 81% of peak memory bandwidth on L4, for 1.82x faster decoding than fp16 on Qwen2.5-1.5B.**
 <!-- /gen:headline -->
 
 ![How the 4-bit matmul works](assets/explainer.gif)
