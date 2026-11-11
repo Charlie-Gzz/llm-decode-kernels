@@ -57,6 +57,12 @@ def test_gemv(N, K, split, device):
     _check(1, N, K, device, config={**GEMV, "SPLIT_K": split})
 
 
+@pytest.mark.parametrize("split", [1, 2])
+def test_gemv_factored(split, device):
+    _check(1, 96, 384, device, config={**GEMV, "SPLIT_K": split, "FACTORED": True})
+    _check(1, 64, 256, device, bias=True, config={**GEMV, "FACTORED": True, "BLOCK_K": 128})
+
+
 def test_gemv_bias(device):
     _check(1, 64, 256, device, bias=True, config=GEMV)
     _check(1, 64, 256, device, bias=True, config={**GEMV, "SPLIT_K": 2, "BLOCK_K": 128})

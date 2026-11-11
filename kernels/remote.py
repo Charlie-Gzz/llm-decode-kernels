@@ -163,6 +163,7 @@ TASKS = {
     "e2e": _lazy("kernels.e2e.run", "run"),
     "profile": _lazy("kernels.bench.profile", "run"),
     "collect": _lazy("kernels.bench.sweep", "collect"),
+    "power": _lazy("kernels.bench.power", "run"),
     "multi": task_multi,
 }
 

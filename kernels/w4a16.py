@@ -106,11 +106,17 @@ def _w4a16_gemv_kernel(
     GROUP_SIZE: tl.constexpr,
     HAS_BIAS: tl.constexpr,
     BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr, SPLIT_K: tl.constexpr,
+    FACTORED: tl.constexpr = False,
 ):
     """Batch-1 decode (M == 1) without tensor cores. tl.dot needs 16 rows, so the main kernel
     wastes 15/16 of its MMA work at M=1 and round-trips the dequantized tile through shared
     memory. Here each program does plain FMAs into a [BLOCK_K, BLOCK_N] fp32 accumulator and
-    reduces over K once at the end."""
+    reduces over K once at the end.
+
+    FACTORED: scale and zero are constant inside a group, so sum_k a*(q-z)*s equals
+    s * (sum_k a*q - z * sum_k a). The inner loop is then shift, mask, convert, one FMA per
+    weight (4 ops instead of 7), with the scale applied once per tile. Less ALU work matters on
+    the power-limited L4. Numerics: fp32 throughout, no fp16 rounding of the weight."""
     pid_n = tl.program_id(0)
     pid_k = tl.program_id(1)
     offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
@@ -124,6 +130,7 @@ def _w4a16_gemv_kernel(
     t_end = min(t_start + tiles_per_split, k_tiles)
 
     acc = tl.zeros((BLOCK_K, BLOCK_N), dtype=tl.float32)
+    out = tl.zeros((BLOCK_N,), dtype=tl.float32)
     for t in range(t_start, t_end):
         k0 = t * BLOCK_K
         a = tl.load(a_ptr + k0 + tl.arange(0, BLOCK_K)).to(tl.float32)
@@ -135,9 +142,14 @@ def _w4a16_gemv_kernel(
         g = k0 // GROUP_SIZE
         s = tl.load(s_ptr + g * stride_sg + offs_n * stride_sn, mask=mask_n, other=0.0)
         z = tl.load(z_ptr + g * stride_sg + offs_n * stride_sn, mask=mask_n, other=0.0)
-        w = (q.to(tl.float16) - z[None, :]) * s[None, :]  # same fp16 rounding as the reference
-        acc += a[:, None] * w.to(tl.float32)
-    out = tl.sum(acc, axis=0)
+        if FACTORED:
+            aq = tl.sum(a[:, None] * q.to(tl.float32), axis=0)
+            out += s.to(tl.float32) * (aq - z.to(tl.float32) * tl.sum(a, axis=0))
+        else:
+            w = (q.to(tl.float16) - z[None, :]) * s[None, :]  # same fp16 rounding as reference
+            acc += a[:, None] * w.to(tl.float32)
+    if not FACTORED:
+        out = tl.sum(acc, axis=0)
 
     if HAS_BIAS:
         if pid_k == 0:
@@ -183,16 +195,16 @@ _tuned_split = triton.autotune(SPLITK_CONFIGS, key=KEY, reset_to_zero=["c_ptr"],
 _decode_choice: dict[tuple, str] = {}  # (M_KEY, N, K, bias) -> path name
 
 
-def _gcfg(bn, bk, split, warps, stages):
-    return triton.Config(dict(BLOCK_N=bn, BLOCK_K=bk, SPLIT_K=split),
+def _gcfg(bn, bk, split, warps, stages, factored):
+    return triton.Config(dict(BLOCK_N=bn, BLOCK_K=bk, SPLIT_K=split, FACTORED=factored),
                          num_warps=warps, num_stages=stages)
 
 
 GEMV_WS = ((2, 3), (4, 3), (4, 4))
-GEMV_CONFIGS = [_gcfg(bn, bk, 1, w, s) for bn in (32, 64, 128) for bk in (64, 128)
-                for w, s in GEMV_WS]
-GEMV_SPLIT_CONFIGS = [_gcfg(bn, bk, sp, w, s) for bn in (32, 64, 128) for bk in (64, 128)
-                      for sp in (2, 4, 8) for w, s in GEMV_WS]
+GEMV_CONFIGS = [_gcfg(bn, bk, 1, w, s, f) for bn in (32, 64, 128) for bk in (64, 128)
+                for w, s in GEMV_WS for f in (False, True)]
+GEMV_SPLIT_CONFIGS = [_gcfg(bn, bk, sp, w, s, f) for bn in (64, 128) for bk in (64, 128)
+                      for sp in (2, 4, 8) for w, s in ((2, 3), (4, 3)) for f in (False, True)]
 GEMV_KEY = ["M_KEY", "N", "K", "HAS_BIAS"]
 _tuned_gemv = triton.autotune(GEMV_CONFIGS, key=GEMV_KEY, cache_results=True)(_w4a16_gemv_kernel)
 _tuned_gemv_split = triton.autotune(GEMV_SPLIT_CONFIGS, key=GEMV_KEY, reset_to_zero=["c_ptr"],
@@ -217,7 +229,8 @@ def _run_gemv(x2, qweight, scales, zeros, bias, m_key, group_size, config=None, 
         x2, qweight, scales, zeros, bias if bias is not None else scales, c,
         N, K, qweight.stride(0), qweight.stride(1), scales.stride(0), scales.stride(1),
         m_key, GROUP_SIZE=group_size, HAS_BIAS=bias is not None,
-        **({k: config[k] for k in ("BLOCK_N", "BLOCK_K", "SPLIT_K")} if config else {}),
+        **({k: config[k] for k in ("BLOCK_N", "BLOCK_K", "SPLIT_K", "FACTORED") if k in config}
+           if config else {}),
     )
     return c.to(x2.dtype) if split else c
 
