@@ -1,0 +1,1 @@
+{"date": "2026-11-11 17:44 UTC", "purpose": "smoke", "gpu": "L4", "gpu_name": "NVIDIA L4", "billed_s": 30.0, "est_usd": 0.0077, "final": false, "ok": true, "note": "corrected: local wall 929s included ~15 min queue wait; container ran 10s + 20s allowance"}

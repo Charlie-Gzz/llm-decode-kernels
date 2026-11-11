@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "first_call_s": 2.9,
+  "vector_add_ms": 0.8775491737851909,
+  "gbps": 229.4191573693867,
+  "summary": "vector add OK, 229 GB/s",
+  "env": {
+    "python": "3.12.15",
+    "gpu_name": "NVIDIA L4",
+    "driver": "610.57.04",
+    "gpu_memory": "23034 MiB",
+    "max_sm_clock": "2040 MHz",
+    "max_mem_clock": "6251 MHz",
+    "torch": "2.15.0+cu132",
+    "torch_cuda": "13.2",
+    "triton": "3.9.0",
+    "capability": "8.9"
+  },
+  "task": "smoke",
+  "params": {},
+  "container_s": 10.0
+}

@@ -19,6 +19,9 @@ import modal
 
 from kernels import config
 
+BOOT = time.time()  # in a container: when Python started, used to estimate billed seconds
+STARTUP_ALLOWANCE_S = 20  # image load before Python starts, which we cannot see from inside
+
 app = modal.App("llm-decode-kernels")
 cache = modal.Volume.from_name("llm-decode-kernels-cache", create_if_missing=True)
 CACHE = "/cache"
@@ -50,9 +53,11 @@ def _run(task: str, params: dict) -> dict:
     from kernels import remote
 
     try:
-        return remote.run_task(task, params)
+        result = remote.run_task(task, params)
     finally:
         cache.commit()
+    result["container_wall_s"] = round(time.time() - BOOT, 1)
+    return result
 
 
 # CPU-only: downloads go here, never on a GPU container.
@@ -114,8 +119,16 @@ def main(
         ok = bool(result.get("ok", True))
         gpu_name = result.get("env", {}).get("gpu_name", "?")
     finally:
-        billed = time.monotonic() - t0
-        row = ledger.record(purpose[:80], gpu, billed, gpu_name, final, ok)
+        # Modal bills container time, not queue time. Use the container's own clock plus a
+        # startup allowance; if no result came back (crash, timeout), fall back to local wall
+        # time, which over-estimates.
+        local_wall = time.monotonic() - t0
+        if "container_wall_s" in result:
+            billed = result["container_wall_s"] + STARTUP_ALLOWANCE_S
+            note = f"local wall {local_wall:.0f}s"
+        else:
+            billed, note = local_wall, "no result: local wall time used"
+        row = ledger.record(purpose[:80], gpu, billed, gpu_name, final, ok, note)
         print(f"[ledger] {row}")
         print(f"[ledger] totals {ledger.totals()}")
     path = _save(task, gpu, result)

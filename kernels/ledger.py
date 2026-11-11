@@ -58,7 +58,8 @@ def check_budget(gpu: str, final: bool, expected_s: float) -> None:
             raise BudgetError(f"H100 cap: used {t['h100_s']:.0f} s of {config.H100_MAX_SECONDS}")
 
 
-def record(purpose: str, gpu: str, billed_s: float, gpu_name: str, final: bool, ok: bool) -> dict:
+def record(purpose: str, gpu: str, billed_s: float, gpu_name: str, final: bool, ok: bool,
+           note: str = "") -> dict:
     row = {
         "date": datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
         "purpose": purpose,
@@ -68,6 +69,7 @@ def record(purpose: str, gpu: str, billed_s: float, gpu_name: str, final: bool, 
         "est_usd": round(estimate_cost(gpu, billed_s), 4),
         "final": final,
         "ok": ok,
+        "note": note,
     }
     JSONL.parent.mkdir(parents=True, exist_ok=True)
     with JSONL.open("a", newline="\n") as f:
@@ -84,8 +86,10 @@ def render() -> None:
         "",
         "Generated from `docs/gpu_ledger.jsonl` by `kernels/ledger.py`. Do not edit by hand.",
         "",
-        "Billed seconds are measured on the local side around each `modal run` call, so they",
-        "include scheduling and container startup. Estimated cost = GPU rate x 1.15 (CPU and",
+        "Billed seconds = the container's own wall clock (from Python start) + 20 s for image",
+        "load before Python starts. Queue time is not billed by Modal and not counted. If a run",
+        "returns no result, local wall time is used instead (an over-estimate).",
+        "Estimated cost = GPU rate x 1.15 (CPU and",
         f"memory allowance). Rates: L4 ${config.GPU_USD_PER_HOUR['L4']}/h, "
         f"H100 ${config.GPU_USD_PER_HOUR['H100']}/h.",
         "",
@@ -94,8 +98,9 @@ def render() -> None:
         f"${config.BUDGET_DEV_USD:.0f}, H100 {t['h100_s'] / 60:.1f} of "
         f"{config.H100_MAX_SECONDS / 60:.0f} min).",
         "",
-        "| # | Date | Purpose | GPU | nvidia-smi name | Billed s | Est. $ | Running $ | OK |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| # | Date | Purpose | GPU | nvidia-smi name | Billed s | Est. $ | Running $ | OK "
+        "| Note |",
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
     running = 0.0
     for i, r in enumerate(rows, 1):
@@ -103,7 +108,7 @@ def render() -> None:
         lines.append(
             f"| {i} | {r['date']} | {r['purpose']} | {r['gpu']} | {r['gpu_name']} | "
             f"{r['billed_s']:.0f} | {r['est_usd']:.3f} | {running:.3f} | "
-            f"{'yes' if r['ok'] else 'no'} |"
+            f"{'yes' if r['ok'] else 'no'} | {r.get('note', '')} |"
         )
     recon = ROOT / "docs" / "ledger_reconciliation.md"
     if recon.exists():
