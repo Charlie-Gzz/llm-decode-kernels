@@ -93,7 +93,9 @@ def task_smoke(params: dict) -> dict:
 
 
 def task_pytest(params: dict) -> dict:
-    args = params.get("args", "tests").split()
+    import shlex
+
+    args = shlex.split(params.get("args", "tests"))
     cmd = [sys.executable, "-m", "pytest", "-q", "-rs", "-p", "no:cacheprovider", *args]
     proc = subprocess.run(cmd, cwd="/root", capture_output=True, text=True)
     out = proc.stdout + proc.stderr
