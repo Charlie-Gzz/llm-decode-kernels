@@ -30,6 +30,12 @@ _Headline pending: results not in yet._
 <!-- gen:w4a16 -->
 | Layer (N x K) | M | GPU | Triton (us) | CUDA (us) | fp16 cuBLAS (us) | torchao (us) | torch.compile (us) | Triton vs fp16 | Triton % peak BW |
 |---|---|---|---|---|---|---|---|---|---|
+| qwen_gate_up (17920x1536) | 1 | L4 | 68.4 | - | 208.6 | 79.0 | 82.6 | 3.05x | 71% |
+| qwen_gate_up (17920x1536) | 16 | L4 | 81.3 | - | 218.1 | 149.3 | 454.1 | 2.68x | 63% |
+| qwen_down (1536x8960) | 1 | L4 | 39.6 | - | 102.9 | 34.1 | 45.4 | 2.60x | 62% |
+| qwen_down (1536x8960) | 16 | L4 | 42.6 | - | 110.6 | 83.0 | 167.5 | 2.60x | 60% |
+| 8b_up (14336x4096) | 1 | L4 | 156.8 | - | 431.4 | 123.9 | 143.8 | 2.75x | 66% |
+| 8b_up (14336x4096) | 16 | L4 | 167.5 | - | 463.6 | 295.0 | 1155.6 | 2.77x | 63% |
 <!-- /gen:w4a16 -->
 
 ### Fused RMSNorm and SwiGLU
@@ -37,18 +43,22 @@ _Headline pending: results not in yet._
 <!-- gen:kernels -->
 | Kernel | Shape | GPU | Ours (us) | PyTorch eager (us) | torch.compile (us) | Speedup vs eager | % peak BW |
 |---|---|---|---|---|---|---|---|
+| RMSNorm + residual | N=4096, M=16384 | L4 | 2268.6 | 12036.1 | 2207.1 | 5.31x | 79% |
+| RMSNorm + residual | N=1536, M=1 | L4 | 1.3 | 10.3 | 1.3 | 7.80x | 4% |
+| SwiGLU | I=8960, M=4096 | L4 | 932.0 | 1559.8 | 878.8 | 1.67x | 79% |
+| SwiGLU | I=8960, M=1 | L4 | 1.1 | 2.7 | 1.0 | 2.44x | 16% |
 <!-- /gen:kernels -->
 
 Times are CUDA-graph medians of 3 sweeps, with enough rotating input copies that every call reads
 from DRAM (working set at least 4x the L2 cache).
 <!-- gen:spread -->
-
+Median spread between the 3 sweeps: 0.6%. 0 of 255 measurements spread more than 10% (marked in the site tables).
 <!-- /gen:spread -->
 
 ### Cost
 
 <!-- gen:cost -->
-Total GPU time: **0.01 GPU-hours**, estimated **$0.01** (cap $30), of which H100: 0 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
+Total GPU time: **0.42 GPU-hours**, estimated **$0.39** (cap $30), of which H100: 0 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
 <!-- /gen:cost -->
 
 ## Quickstart

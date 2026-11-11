@@ -113,11 +113,7 @@ def cases_swiglu(quick: bool):
 
 
 # ---------------------------------------------------------------- W4A16 matmul
-# (label, N, K): Qwen2.5-1.5B layers (qkv and gate_up fused) plus Llama-3-8B-sized MLP layers.
-W4_SHAPES = [
-    ("qwen_qkv", 2048, 1536), ("qwen_o", 1536, 1536), ("qwen_gate_up", 17920, 1536),
-    ("qwen_down", 1536, 8960), ("8b_up", 14336, 4096), ("8b_down", 4096, 14336),
-]
+W4_SHAPES = config.W4_SHAPES
 DECODE_M = [1, 2, 4, 8, 16]
 PREFILL_M = [128, 512, 2048]
 

@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt  # noqa: E402
 from kernels import config  # noqa: E402
 from kernels.assets import data  # noqa: E402
 from kernels.assets.style import (  # noqa: E402
-    ACCENT,
     MUTED,
     ROOT,
     SERIES,
@@ -64,11 +63,17 @@ def speedup_elementwise(rows, gpu: str, kernel: str, fixed: dict, x_key: str, ba
     panels = sorted({r["shape"][panel_key] for r in data.select(rows, gpu=gpu, kernel=kernel)})
     if not panels:
         return []
-    fig, axes = plt.subplots(1, len(panels), figsize=(8, 4.4), sharey=True, squeeze=False)
+    fig, axes = plt.subplots(1, len(panels), figsize=(8, 4.6), sharey=True, squeeze=False)
     best = (0, None)
+    vs_compile = []
     for ax, pv in zip(axes[0], panels):
         sel = data.select(rows, gpu=gpu, kernel=kernel, **fixed, **{panel_key: pv})
         xs = sorted({r["shape"][x_key] for r in sel})
+        for x in xs:
+            t, c = data.one(sel, impl="triton", **{x_key: x}), data.one(sel, impl="compile",
+                                                                          **{x_key: x})
+            if t and c:
+                vs_compile.append(c["ms"] / t["ms"])
         for impl in ("triton", "compile"):
             pts = []
             for x in xs:
@@ -86,12 +91,18 @@ def speedup_elementwise(rows, gpu: str, kernel: str, fixed: dict, x_key: str, ba
         ax.set_xlabel(f"rows {x_key} (tokens)")
         ax.set_title(f"{panel_key} = {pv}", fontsize=11, color=MUTED, loc="left")
     axes[0][0].set_ylabel(f"speedup vs {SERIES[base]['label']}")
-    axes[0][0].legend(loc="upper left")
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper left", ncol=2, bbox_to_anchor=(0.06, 0.885))
     name = "Fused RMSNorm + residual" if kernel == "rmsnorm" else "Fused SwiGLU"
-    fig.suptitle(f"{name} is up to {best[0]:.1f}x faster than PyTorch eager on {gpu}",
+    rel = statistics.median(vs_compile) if vs_compile else 1
+    if 0.95 <= rel <= 1.05:
+        vs = "on par with torch.compile"
+    else:
+        vs = f"{rel:.2f}x vs torch.compile" if rel > 1 else f"{1 / rel:.2f}x slower than compile"
+    fig.suptitle(f"{name}: up to {best[0]:.1f}x faster than eager, {vs}",
                  x=0.012, ha="left", color=TEXT, fontsize=14, fontweight="semibold")
     footnote(fig, _gpu_note(gpu, "higher is better"))
-    fig.tight_layout(rect=(0, 0.04, 1, 0.98))
+    fig.tight_layout(rect=(0, 0.04, 1, 0.86))
     return _save(fig, f"speedup_{kernel}_{gpu.lower()}")
 
 
@@ -138,20 +149,19 @@ def speedup_w4a16(rows, gpu: str):
     fig.legend(handles, labels, loc="upper center", ncol=len(labels), bbox_to_anchor=(0.5, 0.93),
                fontsize=9)
     dmed = statistics.median(decode_speedups) if decode_speedups else 0
-    pmed = statistics.median(prefill_speedups) if prefill_speedups else 0
-    verdict = "but loses to cuBLAS at prefill" if pmed < 1 else "and still wins at prefill"
-    fig.suptitle(f"4-bit Triton matmul: {dmed:.1f}x faster than fp16 at decode (median), "
-                 f"{verdict}", x=0.012, ha="left", color=TEXT, fontsize=13,
-                 fontweight="semibold")
+    title = f"4-bit Triton matmul is {dmed:.1f}x faster than fp16 cuBLAS at decode (median)"
+    if prefill_speedups:
+        pmed = statistics.median(prefill_speedups)
+        verdict = "loses to cuBLAS" if pmed < 1 else "still wins"
+        title += f"\nand {verdict} at prefill ({pmed:.2f}x median)"
+    fig.suptitle(title, x=0.012, ha="left", color=TEXT, fontsize=13, fontweight="semibold")
     footnote(fig, _gpu_note(gpu, "group size 128 | higher is better"))
     fig.tight_layout(rect=(0, 0.04, 1, 0.88))
     return _save(fig, f"speedup_w4a16_{gpu.lower()}")
 
 
 def _w4_shapes():
-    from kernels.bench.sweep import W4_SHAPES
-
-    return W4_SHAPES
+    return config.W4_SHAPES
 
 
 # ----------------------------------------------------------------------------- roofline
@@ -198,8 +208,8 @@ def roofline(rows, gpu: str):
     roof = np.minimum(bw * xs, peak) / 1e12
     ax.plot(xs, roof, color=MUTED, lw=1.5)
     ridge = peak / bw
-    ax.annotate(f"memory roof {spec['peak_gbps']:.0f} GB/s", (0.3, bw * 0.3 / 1e12),
-                xytext=(0, 10), textcoords="offset points", color=MUTED, fontsize=9, rotation=0)
+    ax.annotate(f"memory roof {spec['peak_gbps']:.0f} GB/s", (ridge / 4, bw * ridge / 4e12),
+                xytext=(-8, 8), textcoords="offset points", color=MUTED, fontsize=9, ha="right")
     ax.annotate(f"fp16 tensor roof {spec['peak_fp16_tflops']:.0f} TFLOPS", (ridge * 1.5,
                 peak / 1e12), xytext=(0, 6), textcoords="offset points", color=MUTED, fontsize=9)
     best = None
@@ -220,9 +230,9 @@ def roofline(rows, gpu: str):
     ax.set_xlabel("arithmetic intensity (FLOP per byte of DRAM traffic)")
     ax.set_ylabel("achieved TFLOPS")
     ax.set_xlim(0.1, 1e4)
-    title = f"Decode kernels sit on the memory roof of the {gpu}"
+    title = f"Every decode kernel sits under the {gpu}'s memory roof"
     if best:
-        title += f": W4A16 at batch 1 reaches {best:.0f}% of peak bandwidth"
+        title += f"\nW4A16 at batch 1 reaches {best:.0f}% of peak bandwidth"
     ax.set_title(title, fontsize=13)
     footnote(fig, f"{gpu} | fp16 | filled = ours, hollow = fp16 cuBLAS | matmul shape 14336x4096 "
                   "| elementwise FLOPs approximate")
@@ -237,7 +247,8 @@ def bandwidth_bars(rows, gpu: str):
     copy = data.one(rows, gpu=gpu, kernel="copy")
     for label, impl, r, _ in _points(rows, gpu):
         if impl != "fp16" and "2048" not in label:
-            bars.append((label, impl, r["pct_peak_bw"]))
+            name = label.replace("W4A16", "W4A16 8b_up").replace(" CUDA", "")
+            bars.append((name + (" (CUDA)" if impl == "cuda" else ""), impl, r["pct_peak_bw"]))
     for layer in ("qwen_gate_up", "qwen_down"):
         r = data.one(rows, gpu=gpu, kernel="w4a16", impl="triton", layer=layer, M=1)
         if r:
@@ -254,7 +265,7 @@ def bandwidth_bars(rows, gpu: str):
                 family="JetBrains Mono")
     ax.set_yticks(list(ys), [b[0] for b in bars])
     if copy:
-        ax.axvline(copy["pct_peak_bw"], color=ACCENT, ls="--", lw=1.2)
+        ax.axvline(copy["pct_peak_bw"], color=MUTED, ls="--", lw=1.2)
         ax.text(copy["pct_peak_bw"], len(bars) - 0.4, f" device copy {copy['pct_peak_bw']:.0f}%",
                 color=MUTED, fontsize=9, va="bottom")
     ax.set_xlim(0, 105)

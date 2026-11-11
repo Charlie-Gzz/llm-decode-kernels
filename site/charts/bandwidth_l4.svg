@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="576pt" height="331.2pt" viewBox="0 0 576 331.2" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-11T15:23:19.958679</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 331.2 
+L 576 331.2 
+L 576 0 
+L 0 0 
+z
+" style="fill: #0b0f17"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 116.74375 266.35082 
+L 564.12 266.35082 
+L 564.12 38.47375 
+L 116.74375 38.47375 
+z
+" style="fill: #131a26"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <path d="M 116.74375 266.35082 
+L 116.74375 38.47375 
+" clip-path="url(#p63a6bc638e)" style="fill: none; stroke: #1f2937; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_2">
+      <defs>
+       <path id="mb4c8415f47" d="M 0 0 
+L 0 3.5 
+" style="stroke: #9ca3af; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#mb4c8415f47" x="116.74375" y="266.35082" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle; fill: #9ca3af" x="116.74375" y="283.03832" transform="rotate(-0 116.74375 283.03832)">0</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_3">
+      <path d="M 201.958274 266.35082 
+L 201.958274 38.47375 
+" clip-path="url(#p63a6bc638e)" style="fill: none; stroke: #1f2937; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#mb4c8415f47" x="201.958274" y="266.35082" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle; fill: #9ca3af" x="201.958274" y="283.03832" transform="rotate(-0 201.958274 283.03832)">20</text>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_5">
+      <path d="M 287.172798 266.35082 
+L 287.172798 38.47375 
+" clip-path="url(#p63a6bc638e)" style="fill: none; stroke: #1f2937; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6">
+      <g>
+       <use xlink:href="#mb4c8415f47" x="287.172798" y="266.35082" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle; fill: #9ca3af" x="287.172798" y="283.03832" transform="rotate(-0 287.172798 283.03832)">40</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_7">
+      <path d="M 372.387321 266.35082 
+L 372.387321 38.47375 
+" clip-path="url(#p63a6bc638e)" style="fill: none; stroke: #1f2937; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#mb4c8415f47" x="372.387321" y="266.35082" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle; fill: #9ca3af" x="372.387321" y="283.03832" transform="rotate(-0 372.387321 283.03832)">60</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_9">
+      <path d="M 457.601845 266.35082 
+L 457.601845 38.47375 
+" clip-path="url(#p63a6bc638e)" style="fill: none; stroke: #1f2937; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#mb4c8415f47" x="457.601845" y="266.35082" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle; fill: #9ca3af" x="457.601845" y="283.03832" transform="rotate(-0 457.601845 283.03832)">80</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_11">
+      <path d="M 542.816369 266.35082 
+L 542.816369 38.47375 
+" clip-path="url(#p63a6bc638e)" style="fill: none; stroke: #1f2937; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12">
+      <g>
+       <use xlink:href="#mb4c8415f47" x="542.816369" y="266.35082" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_6">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: middle; fill: #9ca3af" x="542.816369" y="283.03832" transform="rotate(-0 542.816369 283.03832)">100</text>
+     </g>
+    </g>
+    <g id="text_7">
+     <text style="font-size: 11px; font-family: 'Inter'; text-anchor: middle; fill: #9ca3af" x="340.431875" y="300.10668" transform="rotate(-0 340.431875 300.10668)">% of 300 GB/s spec-sheet bandwidth</text>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_13">
+      <defs>
+       <path id="ma3c7b8d391" d="M 0 0 
+L -3.5 0 
+" style="stroke: #9ca3af; stroke-width: 0.8"/>
+      </defs>
+      <g>
+       <use xlink:href="#ma3c7b8d391" x="116.74375" y="244.565743" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: end; fill: #9ca3af" x="109.74375" y="249.409493" transform="rotate(-0 109.74375 249.409493)">W4A16 down M=1</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_14">
+      <g>
+       <use xlink:href="#ma3c7b8d391" x="116.74375" y="207.70436" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: end; fill: #9ca3af" x="109.74375" y="212.54811" transform="rotate(-0 109.74375 212.54811)">W4A16 8b_up M=16</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_15">
+      <g>
+       <use xlink:href="#ma3c7b8d391" x="116.74375" y="170.842977" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: end; fill: #9ca3af" x="109.74375" y="175.686727" transform="rotate(-0 109.74375 175.686727)">W4A16 8b_up M=1</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#ma3c7b8d391" x="116.74375" y="133.981594" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: end; fill: #9ca3af" x="109.74375" y="138.825344" transform="rotate(-0 109.74375 138.825344)">W4A16 gate_up M=1</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_17">
+      <g>
+       <use xlink:href="#ma3c7b8d391" x="116.74375" y="97.120211" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_12">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: end; fill: #9ca3af" x="109.74375" y="101.963961" transform="rotate(-0 109.74375 101.963961)">RMSNorm+res</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#ma3c7b8d391" x="116.74375" y="60.258827" style="fill: #9ca3af; stroke: #9ca3af; stroke-width: 0.8"/>
+      </g>
+     </g>
+     <g id="text_13">
+      <text style="font-size: 10px; font-family: 'Inter'; text-anchor: end; fill: #9ca3af" x="109.74375" y="65.102577" transform="rotate(-0 109.74375 65.102577)">SwiGLU</text>
+     </g>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 116.74375 255.992772 
+L 379.763178 255.992772 
+L 379.763178 233.138714 
+L 116.74375 233.138714 
+z
+" clip-path="url(#p63a6bc638e)" style="fill: #a3e635; stroke: #131a26; stroke-width: 2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 116.74375 219.131389 
+L 386.17727 219.131389 
+L 386.17727 196.277331 
+L 116.74375 196.277331 
+z
+" clip-path="url(#p63a6bc638e)" style="fill: #a3e635; stroke: #131a26; stroke-width: 2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 116.74375 182.270005 
+L 399.616344 182.270005 
+L 399.616344 159.415948 
+L 116.74375 159.415948 
+z
+" clip-path="url(#p63a6bc638e)" style="fill: #a3e635; stroke: #131a26; stroke-width: 2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 116.74375 145.408622 
+L 421.227323 145.408622 
+L 421.227323 122.554565 
+L 116.74375 122.554565 
+z
+" clip-path="url(#p63a6bc638e)" style="fill: #a3e635; stroke: #131a26; stroke-width: 2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 116.74375 108.547239 
+L 452.849603 108.547239 
+L 452.849603 85.693182 
+L 116.74375 85.693182 
+z
+" clip-path="url(#p63a6bc638e)" style="fill: #a3e635; stroke: #131a26; stroke-width: 2; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 116.74375 71.685856 
+L 457.381576 71.685856 
+L 457.381576 48.831799 
+L 116.74375 48.831799 
+z
+" clip-path="url(#p63a6bc638e)" style="fill: #a3e635; stroke: #131a26; stroke-width: 2; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_19">
+    <path d="M 444.210992 266.35082 
+L 444.210992 38.47375 
+" clip-path="url(#p63a6bc638e)" style="fill: none; stroke-dasharray: 4.44,1.92; stroke-dashoffset: 0; stroke: #9ca3af; stroke-width: 1.2"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 116.74375 266.35082 
+L 116.74375 38.47375 
+" style="fill: none; stroke: #1f2937; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 116.74375 266.35082 
+L 564.12 266.35082 
+" style="fill: none; stroke: #1f2937; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_14">
+    <text style="font-size: 10px; font-family: 'JetBrains Mono'; text-anchor: start; fill: #e5e7eb" x="384.023904" y="248.165743" transform="rotate(-0 384.023904 248.165743)">62%</text>
+   </g>
+   <g id="text_15">
+    <text style="font-size: 10px; font-family: 'JetBrains Mono'; text-anchor: start; fill: #e5e7eb" x="390.437996" y="211.30436" transform="rotate(-0 390.437996 211.30436)">63%</text>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 10px; font-family: 'JetBrains Mono'; text-anchor: start; fill: #e5e7eb" x="403.87707" y="174.442977" transform="rotate(-0 403.87707 174.442977)">66%</text>
+   </g>
+   <g id="text_17">
+    <text style="font-size: 10px; font-family: 'JetBrains Mono'; text-anchor: start; fill: #e5e7eb" x="425.488049" y="137.581594" transform="rotate(-0 425.488049 137.581594)">71%</text>
+   </g>
+   <g id="text_18">
+    <text style="font-size: 10px; font-family: 'JetBrains Mono'; text-anchor: start; fill: #e5e7eb" x="457.110329" y="100.720211" transform="rotate(-0 457.110329 100.720211)">79%</text>
+   </g>
+   <g id="text_19">
+    <text style="font-size: 10px; font-family: 'JetBrains Mono'; text-anchor: start; fill: #e5e7eb" x="461.642302" y="63.858827" transform="rotate(-0 461.642302 63.858827)">80%</text>
+   </g>
+   <g id="text_20">
+    <text style="font-size: 9px; font-family: 'Inter'; text-anchor: start; fill: #9ca3af" x="444.210992" y="35.971099" transform="rotate(-0 444.210992 35.971099)"> device copy 77%</text>
+   </g>
+   <g id="text_21">
+    <text style="font-weight: 600; font-size: 13px; font-family: 'Inter'; text-anchor: start; fill: #e5e7eb" x="116.74375" y="24.47375" transform="rotate(-0 116.74375 24.47375)">SwiGLU moves data at 80% of the L4's peak bandwidth</text>
+   </g>
+  </g>
+  <g id="text_22">
+   <text style="font-size: 9px; font-family: 'JetBrains Mono'; text-anchor: start; fill: #9ca3af" x="6.912" y="324.5256" transform="rotate(-0 6.912 324.5256)">L4 | fp16 | minimum bytes / time | dashed = plain device-to-device copy</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p63a6bc638e">
+   <rect x="116.74375" y="38.47375" width="447.37625" height="227.87707"/>
+  </clipPath>
+ </defs>
+</svg>

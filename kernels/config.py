@@ -65,3 +65,10 @@ def gpu_key(name: str) -> str:
         if key in name:
             return key
     raise ValueError(f"unknown GPU {name!r}")
+
+# W4A16 benchmark layers (label, N, K): Qwen2.5-1.5B (qkv and gate_up fused) plus Llama-3-8B-sized
+# MLP layers.
+W4_SHAPES = [
+    ("qwen_qkv", 2048, 1536), ("qwen_o", 1536, 1536), ("qwen_gate_up", 17920, 1536),
+    ("qwen_down", 1536, 8960), ("8b_up", 14336, 4096), ("8b_down", 4096, 14336),
+]
