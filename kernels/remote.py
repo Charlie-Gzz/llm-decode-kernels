@@ -109,11 +109,23 @@ def task_download(params: dict) -> dict:
 
 def task_multi(params: dict) -> dict:
     """Several tasks in one container. L4s can queue for 10+ minutes, so batching saves wall time
-    (and repeated startup cost). params: {"steps": [{"task": ..., **params}, ...]}"""
+    (and repeated startup cost). params: {"steps": [{"task": ..., **params}, ...],
+    "deadline_s": seconds for all steps}. Bench steps get the time left before the deadline as
+    their budget, so a long sweep stops cleanly (checkpointed) instead of hitting the timeout."""
     out, ok = {"steps": []}, True
+    start = time.time()
+    deadline = float(params.get("deadline_s", 1500))
     for step in params["steps"]:
         step = dict(step)
         name = step.pop("task")
+        left = deadline - (time.time() - start)
+        if left < 60:
+            out["steps"].append({"task": name, "params": step, "ok": False, "step_s": 0,
+                                 "error": "skipped: deadline reached"})
+            ok = False
+            continue
+        if name == "bench":
+            step["budget_s"] = min(float(step.get("budget_s", left)), left - 30)
         t0 = time.time()
         try:
             res = TASKS[name](step)
