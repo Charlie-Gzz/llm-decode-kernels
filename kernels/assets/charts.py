@@ -35,6 +35,7 @@ def _save(fig, name: str) -> list:
     paths = [OUT / f"{name}.png", OUT / f"{name}.svg"]
     fig.savefig(paths[0], dpi=DPI)
     fig.savefig(paths[1])
+    paths[1].write_bytes(paths[1].read_bytes().replace(b"\r\n", b"\n"))  # LF on Windows too
     plt.close(fig)
     return paths
 
