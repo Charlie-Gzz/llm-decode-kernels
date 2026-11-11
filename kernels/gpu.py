@@ -11,10 +11,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 
 MODAL = [sys.executable, "-m", "modal"]
+# Modal's CLI prints Unicode; without this, Windows' default codepage crashes it when redirected.
+os.environ["PYTHONUTF8"] = "1"
+os.environ["PYTHONIOENCODING"] = "utf-8"
 ACTIVE = {"ephemeral", "deployed", "running", "initializing", "stopping"}
 
 
