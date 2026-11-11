@@ -1,0 +1,14 @@
+# Same CUDA toolkit and PyTorch as the Modal image. Used locally to compile the CUDA C++
+# kernel with nvcc (no GPU needed), so compile errors never cost GPU time.
+FROM nvidia/cuda:13.2.1-devel-ubuntu24.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-venv python3-dev \
+ && rm -rf /var/lib/apt/lists/* \
+ && python3 -m venv /opt/venv
+ENV PATH=/opt/venv/bin:$PATH \
+    TORCH_CUDA_ARCH_LIST="8.9;9.0" \
+    TORCH_EXTENSIONS_DIR=/tmp/torch_ext \
+    PYTHONDONTWRITEBYTECODE=1
+RUN pip install --no-cache-dir torch==2.15.0 ninja numpy
+WORKDIR /work
+CMD ["python", "-m", "kernels.cuda.build_check"]

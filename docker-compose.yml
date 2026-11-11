@@ -1,0 +1,13 @@
+# Local, free checks. GPU runs go through `python -m kernels.gpu` (Modal).
+#   docker compose run --rm cpu                          # all kernel tests, Triton interpreter
+#   docker compose run --rm cpu pytest -q tests/test_rmsnorm.py
+#   docker compose run --rm nvcc                         # compile the CUDA C++ kernel with nvcc
+services:
+  cpu:
+    build: { context: ., dockerfile: docker/Dockerfile.cpu }
+    image: llm-decode-kernels-cpu
+    volumes: [".:/work"]
+  nvcc:
+    build: { context: ., dockerfile: docker/Dockerfile.cuda }
+    image: llm-decode-kernels-nvcc
+    volumes: [".:/work"]

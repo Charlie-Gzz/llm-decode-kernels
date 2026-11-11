@@ -1,0 +1,29 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+.modal.toml
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# local scratch
+.scratch/
+*.log
+node_modules/
+.playwright/
+
+# editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+.scratch_*
