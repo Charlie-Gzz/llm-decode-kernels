@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import platform
 import subprocess
@@ -40,9 +41,9 @@ def env_info() -> dict:
         import triton
 
         info.update(
-            torch=torch.__version__,
-            torch_cuda=torch.version.cuda,
-            triton=triton.__version__,
+            torch=str(torch.__version__),  # TorchVersion would need torch to unpickle locally
+            torch_cuda=str(torch.version.cuda),
+            triton=str(triton.__version__),
         )
         if torch.cuda.is_available():
             info["capability"] = ".".join(map(str, torch.cuda.get_device_capability()))
@@ -135,4 +136,5 @@ def run_task(task: str, params: dict) -> dict:
     result["task"] = task
     result["params"] = params
     result["container_s"] = round(time.time() - t0, 1)
-    return result
+    # Plain JSON types only: the local side has no torch to unpickle torch objects.
+    return json.loads(json.dumps(result, default=str))

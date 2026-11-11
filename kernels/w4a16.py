@@ -124,8 +124,8 @@ PREFILL_CONFIGS = [
 INTERPRET_CONFIG = dict(BLOCK_M=16, BLOCK_N=32, BLOCK_K=64, SPLIT_K=1, GROUP_M=8)
 
 KEY = ["M_KEY", "N", "K", "HAS_BIAS"]
-_tuned_decode = triton.autotune(DECODE_CONFIGS, key=KEY)(_w4a16_kernel)
-_tuned_prefill = triton.autotune(PREFILL_CONFIGS, key=KEY)(_w4a16_kernel)
+_tuned_decode = triton.autotune(DECODE_CONFIGS, key=KEY, cache_results=True)(_w4a16_kernel)
+_tuned_prefill = triton.autotune(PREFILL_CONFIGS, key=KEY, cache_results=True)(_w4a16_kernel)
 _tuned_split = triton.autotune(SPLITK_CONFIGS, key=KEY, reset_to_zero=["c_ptr"])(_w4a16_kernel)
 _decode_choice: dict[tuple, str] = {}  # (M_KEY, N, K, bias) -> "direct" | "split"
 
