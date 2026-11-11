@@ -9,7 +9,10 @@
 //   - gridDim.y splits K across blocks (split-K) so small N still fills the GPU. With split-K the
 //     blocks atomically add fp32 partials into a zeroed workspace that the host casts to fp16.
 //   - Activations for a K tile are staged in shared memory as fp32 and read as broadcasts.
-// Dequantization rounds (q - z) * s to fp16, exactly like the Triton kernel and the reference.
+// Dequantization is factored like the Triton batch-1 kernel: inside one packed row the 8 weights
+// share a group, so sum_i x_i * (q_i - z) * s = s * (sum_i x_i * q_i - z * sum_i x_i). The inner
+// loop is shift, mask, convert and one FMA per weight; the row sums of x are precomputed once per
+// tile in shared memory. The L4 is power-limited (72 W), so fewer ALU ops means higher clocks.
 
 #include <ATen/cuda/CUDAContext.h>
 #include <cuda_fp16.h>
@@ -29,6 +32,7 @@ __global__ void __launch_bounds__(kThreads) w4a16_decode_kernel(
     const half* __restrict__ zeros, const half* __restrict__ bias, half* __restrict__ out_f16,
     float* __restrict__ out_f32, int M, int N, int K, int group_size, int k_per_split) {
   __shared__ float xs[MT][kTileK];
+  __shared__ float xsum8[MT][kTileK / 8];  // sum of each run of 8 activations (one packed row)
   __shared__ float red[MT][kColsPerBlock];
 
   const int lane = threadIdx.x % 32;
@@ -54,6 +58,14 @@ __global__ void __launch_bounds__(kThreads) w4a16_decode_kernel(
       xs[m][k] = (m < M && k < klen) ? __half2float(x[(size_t)m * K + kt + k]) : 0.f;
     }
     __syncthreads();
+    for (int i = threadIdx.x; i < MT * (kTileK / 8); i += kThreads) {
+      const int m = i / (kTileK / 8), r = i % (kTileK / 8);
+      float sum = 0.f;
+#pragma unroll
+      for (int j = 0; j < 8; ++j) sum += xs[m][r * 8 + j];
+      xsum8[m][r] = sum;
+    }
+    __syncthreads();
     if (!cols_ok) continue;
 
     for (int r = warp; r < klen / 8; r += kWarps) {
@@ -70,13 +82,17 @@ __global__ void __launch_bounds__(kThreads) w4a16_decode_kernel(
       for (int c = 0; c < kColsPerThread; ++c) {
         const float s = __half2float(sh[c]);
         const float z = __half2float(zh[c]);
+        float xq[MT];
+#pragma unroll
+        for (int m = 0; m < MT; ++m) xq[m] = 0.f;
 #pragma unroll
         for (int i = 0; i < 8; ++i) {
           const float qv = static_cast<float>((qs[c] >> (4 * i)) & 0xF);
-          const float w = __half2float(__float2half_rn((qv - z) * s));
 #pragma unroll
-          for (int m = 0; m < MT; ++m) acc[m][c] += w * xs[m][r * 8 + i];
+          for (int m = 0; m < MT; ++m) xq[m] += qv * xs[m][r * 8 + i];
         }
+#pragma unroll
+        for (int m = 0; m < MT; ++m) acc[m][c] += s * (xq[m] - z * xsum8[m][r]);
       }
     }
   }

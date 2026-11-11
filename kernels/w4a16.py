@@ -287,7 +287,7 @@ def _pick_decode_path(args, key) -> str:
     for name in names:
         fn = PATHS[name]
         fn(*args)  # runs the autotuner for this path
-        times[name] = triton.testing.do_bench(lambda fn=fn: fn(*args), warmup=10, rep=40)
+        times[name] = triton.testing.do_bench(lambda fn=fn: fn(*args), warmup=25, rep=100)
     _decode_choice[key] = min(times, key=times.get)
     return _decode_choice[key]
 

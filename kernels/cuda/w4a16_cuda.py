@@ -35,7 +35,7 @@ def _pick_split(x2, qweight, scales, zeros, bias, group_size, key) -> int:
     for split in SPLITS:
         def call(split=split):
             return _ext().w4a16_decode(x2, qweight, scales, zeros, bias, group_size, split)
-        times[split] = triton.testing.do_bench(call, warmup=10, rep=40)
+        times[split] = triton.testing.do_bench(call, warmup=25, rep=100)
     _split_choice[key] = min(times, key=times.get)
     return _split_choice[key]
 
