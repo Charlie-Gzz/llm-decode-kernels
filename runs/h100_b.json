@@ -1,0 +1,7 @@
+{"deadline_s": 1560, "steps": [
+ {"task": "e2e", "backends": ["fp16", "ours", "ours_cuda", "w4_ref"]},
+ {"task": "profile"},
+ {"task": "power", "seconds": 4},
+ {"task": "bench", "run_id": "final", "kernels": ["w4a16_prefill"], "sweeps": 3},
+ {"task": "bench", "run_id": "final", "kernels": ["w4a16_decode"], "sweeps": 3}
+]}
