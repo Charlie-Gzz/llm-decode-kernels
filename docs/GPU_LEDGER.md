@@ -13,3 +13,10 @@ memory allowance). Rates: L4 $0.8/h, H100 $3.95/h.
 | # | Date | Purpose | GPU | nvidia-smi name | Billed s | Est. $ | Running $ | OK | Note |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | 2026-11-11 17:44 UTC | smoke | L4 | NVIDIA L4 | 30 | 0.008 | 0.008 | yes | corrected: local wall 929s included ~15 min queue wait; container ran 10s + 20s allowance |
+
+## Reconciliation with Modal billing
+
+Last checked 2026-11-11 18:00 UTC with `modal billing report --for 'this month'`. Modal's data can lag by about an hour, so the newest runs may be missing. The actual figure also includes CPU-only containers (downloads), which the GPU ledger does not track.
+
+- Modal actual, this app, all resources (GPU, CPU, memory, egress): **$0.0097** (CPU $0.0044, L4 $0.0036, Memory $0.0011, Network Egress $0.0006)
+- Ledger estimate: **$0.0077**

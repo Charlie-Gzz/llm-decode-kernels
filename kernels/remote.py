@@ -107,6 +107,31 @@ def task_download(params: dict) -> dict:
     return {"ok": True, **download_all()}
 
 
+def task_multi(params: dict) -> dict:
+    """Several tasks in one container. L4s can queue for 10+ minutes, so batching saves wall time
+    (and repeated startup cost). params: {"steps": [{"task": ..., **params}, ...]}"""
+    out, ok = {"steps": []}, True
+    for step in params["steps"]:
+        step = dict(step)
+        name = step.pop("task")
+        t0 = time.time()
+        try:
+            res = TASKS[name](step)
+        except Exception:  # keep going: later steps may still be useful
+            import traceback
+
+            res = {"ok": False, "error": traceback.format_exc()[-3000:]}
+        res.update(task=name, params=step, step_s=round(time.time() - t0, 1))
+        ok = ok and bool(res.get("ok", True))
+        out["steps"].append(res)
+        print(f"[multi] {name} done in {res['step_s']}s ok={res.get('ok', True)}")
+    out["ok"] = ok
+    out["summary"] = "\n\n".join(
+        f"== {s['task']} ({s['step_s']}s) ==\n{s.get('summary') or s.get('error', '')}"
+        for s in out["steps"])
+    return out
+
+
 def _lazy(module: str, fn: str):
     def call(params: dict) -> dict:
         import importlib
@@ -123,6 +148,7 @@ TASKS = {
     "bench": _lazy("kernels.bench.sweep", "run"),
     "e2e": _lazy("kernels.e2e.run", "run"),
     "profile": _lazy("kernels.bench.profile", "run"),
+    "multi": task_multi,
 }
 
 

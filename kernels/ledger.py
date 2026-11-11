@@ -116,6 +116,46 @@ def render() -> None:
     MARKDOWN.write_text("\n".join(lines) + "\n", newline="\n")
 
 
-if __name__ == "__main__":
+def reconcile() -> str:
+    """Compare the ledger with Modal's own billing report for this month (all resources)."""
+    import os
+    import subprocess
+    import sys
+
+    env = {**os.environ, "PYTHONUTF8": "1"}
+    cmd = [sys.executable, "-m", "modal", "billing", "report", "--for", "this month",
+           "--show-resources", "--json"]
+    out = subprocess.run(cmd, capture_output=True, text=True, env=env, check=True).stdout
+    rows = json.loads(out)
+    by_resource: dict[str, float] = {}
+    for r in rows:
+        if r.get("description") != "llm-decode-kernels":
+            continue
+        res = r.get("resource", "all")
+        by_resource[res] = by_resource.get(res, 0.0) + float(r["cost"])
+    actual = sum(by_resource.values())
+    t = totals()
+    stamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    parts = ", ".join(f"{k} ${v:.4f}" for k, v in sorted(by_resource.items()))
+    text = (
+        "## Reconciliation with Modal billing\n\n"
+        f"Last checked {stamp} with `modal billing report --for 'this month'`. Modal's data can"
+        " lag by about an hour, so the newest runs may be missing. The actual figure also"
+        " includes CPU-only containers (downloads), which the GPU ledger does not track.\n\n"
+        f"- Modal actual, this app, all resources (GPU, CPU, memory, egress): **${actual:.4f}**"
+        f" ({parts})\n"
+        f"- Ledger estimate: **${t['usd']:.4f}**\n"
+    )
+    (ROOT / "docs" / "ledger_reconciliation.md").write_text(text, newline="\n")
     render()
-    print(json.dumps(totals(), indent=2))
+    return text
+
+
+if __name__ == "__main__":
+    import sys
+
+    if sys.argv[1:] == ["reconcile"]:
+        print(reconcile())
+    else:
+        render()
+        print(json.dumps(totals(), indent=2))
