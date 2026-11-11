@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import gc
 import math
 import statistics
 from collections.abc import Callable
@@ -42,6 +43,30 @@ def _events():
     return torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
 
 
+def capture(body: Callable, retries: int = 1):
+    """Capture `body()` into a CUDA graph and return (graph, body's result).
+
+    Captures failed sporadically (cudaErrorStreamCaptureInvalidated) in different kernels and
+    sweeps. The likely cause is Python's GC freeing an old CUDA object mid-capture, so: collect
+    first, keep GC off during capture, capture in thread-local mode, and retry once.
+    """
+    last = None
+    for _ in range(retries + 1):
+        graph = torch.cuda.CUDAGraph()
+        gc.collect()
+        gc.disable()
+        try:
+            with torch.cuda.graph(graph, capture_error_mode="thread_local"):
+                out = body()
+            return graph, out
+        except Exception as e:  # torch.AcceleratorError and friends
+            last = e
+            torch.cuda.synchronize()
+        finally:
+            gc.enable()
+    raise last
+
+
 def time_graph(fn: Callable, sets: list) -> float:
     """Median ms per call with all calls captured in one CUDA graph."""
     stream = torch.cuda.Stream()
@@ -55,9 +80,7 @@ def time_graph(fn: Callable, sets: list) -> float:
     # Keep every call's output alive during capture so each call writes its own buffer. If they
     # were freed, the graph pool would hand the same buffer to the next call and writes would
     # stay in L2 (first M2 run measured up to 171% of DRAM peak because of this).
-    graph = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(graph):
-        outs = [fn(*args) for args in sets]
+    graph, outs = capture(lambda: [fn(*args) for args in sets])
     graph.replay()
     torch.cuda.synchronize()
 

@@ -274,7 +274,7 @@ def run(params: dict) -> dict:
     CKPT_DIR.mkdir(parents=True, exist_ok=True)
     ckpt = CKPT_DIR / f"{run_id}_{gpu}.jsonl"
     rows = [json.loads(line) for line in ckpt.read_text().splitlines()] if ckpt.exists() else []
-    done = {r["key"] for r in rows}
+    done = {r["key"] for r in rows if "error" not in r}  # errored cases are retried
     print(f"[sweep] {run_id} on {gpu}: {len(done)} cases already done")
 
     t0 = last_commit = time.time()
@@ -315,7 +315,8 @@ def run(params: dict) -> dict:
         from kernels.w4a16 import best_configs
 
         extra["triton_configs"] = best_configs()
-    errors = [r for r in rows if "error" in r]
+    ok_keys = {r["key"] for r in rows if "error" not in r}
+    errors = [r for r in rows if "error" in r and r["key"] not in ok_keys]
     lines = [f"{r['kernel']:8s} {r['impl']:8s} {json.dumps(r['shape']):60s} "
              f"{r['ms'] * 1e3:9.1f} us {r['gbps']:7.1f} GB/s {r['pct_peak_bw']:5.1f}%"
              f"{' SPREAD' if r['flag_spread'] else ''}" for r in agg]

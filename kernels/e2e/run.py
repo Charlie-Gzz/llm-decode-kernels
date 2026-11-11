@@ -17,6 +17,7 @@ import time
 import torch
 import torch.nn.functional as F
 
+from kernels.bench.harness import capture
 from kernels.e2e.model import QwenRunner, make_backend
 
 PROMPTS = [
@@ -31,6 +32,9 @@ def _events():
 
 
 def load_hf():
+    import os
+
+    os.environ["HF_HUB_OFFLINE"] = "1"  # weights come from the Volume, never the network
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     from kernels.e2e.data import model_dir
@@ -87,9 +91,7 @@ class GraphDecoder:
         torch.cuda.current_stream().wait_stream(s)
         torch.cuda.synchronize()
         self.prefill(ids)
-        self.graph = torch.cuda.CUDAGraph()
-        with torch.cuda.graph(self.graph):
-            self._step()
+        self.graph, _ = capture(self._step)
         torch.cuda.synchronize()
 
     def generate(self, ids, steps: int) -> tuple[list[int], float]:
@@ -140,9 +142,7 @@ def prefill_speed(runner, T: int, repeats: int = 5) -> dict:
     for _ in range(2):
         runner.forward(ids, pos)
     torch.cuda.synchronize()
-    graph = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(graph):
-        runner.forward(ids, pos)
+    graph, _ = capture(lambda: runner.forward(ids, pos))
     graph.replay()
     torch.cuda.synchronize()
     times = []
@@ -181,9 +181,7 @@ def layers_only_ms(runner, M: int = 1) -> float:
     for _ in range(3):
         step()
     torch.cuda.synchronize()
-    graph = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(graph):
-        step()
+    graph, _ = capture(step)
     graph.replay()
     torch.cuda.synchronize()
     times = []

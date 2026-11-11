@@ -12,10 +12,14 @@ WIKITEXT = CACHE / "data" / "wikitext2_test.txt"
 
 
 def model_dir() -> str:
-    from huggingface_hub import snapshot_download
-
-    # local_files_only after the first download, so GPU containers never hit the network.
-    return snapshot_download(config.MODEL_ID, local_files_only=True)
+    """The cached snapshot folder. Read straight from the HF cache layout: GPU containers never
+    touch the network, and newer huggingface_hub refuses `local_files_only` on a snapshot that
+    was downloaded with allow_patterns (it calls it incomplete)."""
+    repo = CACHE / "hf" / "hub" / ("models--" + config.MODEL_ID.replace("/", "--"))
+    snaps = sorted((repo / "snapshots").glob("*/config.json"), key=lambda p: p.stat().st_mtime)
+    if not snaps:
+        raise FileNotFoundError(f"no cached snapshot under {repo}; run the download task first")
+    return str(snaps[-1].parent)
 
 
 def download_all() -> dict:
