@@ -34,6 +34,9 @@ target-version = "py311"
 select = ["E", "F", "I", "B", "UP", "W"]
 ignore = ["E731", "B905", "E741"]  # E741: M, N, K, I are matrix dims
 
+[tool.ruff.lint.per-file-ignores]
+"kernels/assets/site.py" = ["E501"]  # HTML templates
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [

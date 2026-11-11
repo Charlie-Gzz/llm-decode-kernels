@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>W4A16 matmul | llm-decode-kernels</title>
+<meta name="description" content="Triton and CUDA kernels for LLM decoding, benchmarked on L4 and H100.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { bg: "#0B0F17", panel: "#131A26", line: "#1F2937", ink: "#E5E7EB", muted: "#9CA3AF",
+            accent: "#A3E635" },
+  fontFamily: { sans: ["Inter", "sans-serif"], mono: ["JetBrains Mono", "monospace"] } } } };
+</script>
+<style>
+  body { background: #0B0F17; color: #E5E7EB; }
+  pre code { font-size: 12.5px; line-height: 1.55; }
+  table td, table th { padding: 6px 10px; border-bottom: 1px solid #1F2937; text-align: right; }
+  table td:first-child, table th:first-child { text-align: left; }
+  .chart img { width: 100%; height: auto; border-radius: 10px; border: 1px solid #1F2937; }
+</style>
+</head>
+<body class="font-sans antialiased">
+<header class="border-b border-line">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center gap-3 justify-between">
+    <a href="index.html" class="flex items-center gap-2 font-semibold">
+      <span class="inline-block w-3 h-3 rounded-sm bg-accent"></span>llm-decode-kernels</a>
+    <nav class="flex flex-wrap gap-1"><a href="index.html" class="px-3 py-1.5 rounded-md text-sm text-muted hover:text-ink">Overview</a><a href="rmsnorm.html" class="px-3 py-1.5 rounded-md text-sm text-muted hover:text-ink">RMSNorm</a><a href="swiglu.html" class="px-3 py-1.5 rounded-md text-sm text-muted hover:text-ink">SwiGLU</a><a href="w4a16.html" class="px-3 py-1.5 rounded-md text-sm bg-panel text-ink border border-line">W4A16 matmul</a><a href="e2e.html" class="px-3 py-1.5 rounded-md text-sm text-muted hover:text-ink">End to end</a><a href="cost.html" class="px-3 py-1.5 rounded-md text-sm text-muted hover:text-ink">Cost</a></nav>
+  </div>
+</header>
+<main class="max-w-6xl mx-auto px-4 py-8 space-y-10">
+<h1 class="text-3xl font-bold">W4A16 matmul</h1><p class="text-muted max-w-3xl">Decode multiplies a few activation rows by every weight matrix in the model, so it is limited by how fast the weights stream from DRAM. Storing weights as 4-bit integers (8 per int32, fp16 scale and zero per group of 128) cuts those bytes ~3.6x. The kernel dequantizes in registers and feeds tensor cores. For decode, split-K spreads one small matmul over the whole GPU. A CUDA C++ version of the decode case is compared side by side.</p><section class="space-y-4"><h2 class="text-xl font-semibold">Triton kernel</h2><div class="bg-panel border border-line rounded-xl overflow-x-auto"><div class="px-4 py-2 text-xs text-muted border-b border-line font-mono">kernels/w4a16.py</div><pre class="p-4"><code class="font-mono">@triton.jit
+def _w4a16_kernel(
+    a_ptr, q_ptr, s_ptr, z_ptr, bias_ptr, c_ptr,
+    M, N, K,
+    stride_am, stride_ak, stride_qk, stride_qn, stride_sg, stride_sn, stride_cm, stride_cn,
+    M_KEY,  # only used as an autotune key (M rounded up to a power of 2)
+    GROUP_SIZE: tl.constexpr,
+    HAS_BIAS: tl.constexpr,
+    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr, BLOCK_K: tl.constexpr,
+    SPLIT_K: tl.constexpr, GROUP_M: tl.constexpr,
+):
+    # Grouped tile order so neighbouring programs share A rows / B columns in L2 (prefill).
+    pid = tl.program_id(0)
+    pid_k = tl.program_id(1)
+    num_pid_m = tl.cdiv(M, BLOCK_M)
+    num_pid_n = tl.cdiv(N, BLOCK_N)
+    group_id = pid // (GROUP_M * num_pid_n)
+    first_m = group_id * GROUP_M
+    group_rows = min(num_pid_m - first_m, GROUP_M)
+    pid_m = first_m + (pid % group_rows)
+    pid_n = (pid % (GROUP_M * num_pid_n)) // group_rows
+
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
+    mask_m = offs_m &lt; M
+    mask_n = offs_n &lt; N
+    offs_pk = tl.arange(0, BLOCK_K // 8)  # packed rows in one K tile
+    shifts = (tl.arange(0, 8) * 4)[None, :, None]
+
+    # This program&#x27;s K range, aligned to BLOCK_K (BLOCK_K divides GROUP_SIZE divides K).
+    k_tiles = K // BLOCK_K
+    tiles_per_split = tl.cdiv(k_tiles, SPLIT_K)
+    t_start = pid_k * tiles_per_split
+    t_end = min(t_start + tiles_per_split, k_tiles)
+
+    acc = tl.zeros((BLOCK_M, BLOCK_N), dtype=tl.float32)
+    for t in range(t_start, t_end):
+        k0 = t * BLOCK_K
+        offs_k = k0 + tl.arange(0, BLOCK_K)
+        a = tl.load(
+            a_ptr + offs_m[:, None] * stride_am + offs_k[None, :] * stride_ak,
+            mask=mask_m[:, None], other=0.0,
+        )
+        packed = tl.load(
+            q_ptr + (k0 // 8 + offs_pk)[:, None] * stride_qk + offs_n[None, :] * stride_qn,
+            mask=mask_n[None, :], other=0,
+        )
+        # [BK/8, BN] int32 -&gt; [BK/8, 8, BN] nibbles -&gt; [BK, BN], row k = 8 * packed_row + i
+        q = (packed[:, None, :] &gt;&gt; shifts) &amp; 0xF
+        q = tl.reshape(q, (BLOCK_K, BLOCK_N))
+        g = k0 // GROUP_SIZE
+        s = tl.load(s_ptr + g * stride_sg + offs_n * stride_sn, mask=mask_n, other=0.0)
+        z = tl.load(z_ptr + g * stride_sg + offs_n * stride_sn, mask=mask_n, other=0.0)
+        b = (q.to(tl.float16) - z[None, :]) * s[None, :]
+        acc = tl.dot(a, b, acc)
+
+    if HAS_BIAS:
+        if pid_k == 0:
+            bias = tl.load(bias_ptr + offs_n, mask=mask_n, other=0.0)
+            acc += bias.to(tl.float32)[None, :]
+
+    c_ptrs = c_ptr + offs_m[:, None] * stride_cm + offs_n[None, :] * stride_cn
+    c_mask = mask_m[:, None] &amp; mask_n[None, :]
+    if SPLIT_K == 1:
+        tl.store(c_ptrs, acc.to(c_ptr.dtype.element_ty), mask=c_mask)
+    else:
+        tl.atomic_add(c_ptrs, acc, mask=c_mask, sem=&quot;relaxed&quot;)</code></pre></div></section><section class="space-y-4"><h2 class="text-xl font-semibold">CUDA C++ decode kernel (inner loop)</h2><div class="bg-panel border border-line rounded-xl overflow-x-auto"><div class="px-4 py-2 text-xs text-muted border-b border-line font-mono">kernels/cuda/w4a16_decode.cu</div><pre class="p-4"><code class="font-mono">__global__ void __launch_bounds__(kThreads) w4a16_decode_kernel(
+    const half* __restrict__ x, const int* __restrict__ qweight, const half* __restrict__ scales,
+    const half* __restrict__ zeros, const half* __restrict__ bias, half* __restrict__ out_f16,
+    float* __restrict__ out_f32, int M, int N, int K, int group_size, int k_per_split) {
+  __shared__ float xs[MT][kTileK];
+  __shared__ float red[MT][kColsPerBlock];
+
+  const int lane = threadIdx.x % 32;
+  const int warp = threadIdx.x / 32;
+  const int n0 = blockIdx.x * kColsPerBlock + lane * kColsPerThread;
+  const bool cols_ok = n0 &lt; N;  // host checks N % 4 == 0, so a lane&#x27;s 4 columns are all in or out
+  const int k_begin = blockIdx.y * k_per_split;
+  const int k_end = min(k_begin + k_per_split, K);
+
+  for (int i = threadIdx.x; i &lt; MT * kColsPerBlock; i += kThreads) (&amp;red[0][0])[i] = 0.f;
+
+  float acc[MT][kColsPerThread];
+#pragma unroll
+  for (int m = 0; m &lt; MT; ++m)
+#pragma unroll
+    for (int c = 0; c &lt; kColsPerThread; ++c) acc[m][c] = 0.f;
+
+  for (int kt = k_begin; kt &lt; k_end; kt += kTileK) {
+    const int klen = min(kTileK, k_end - kt);  // multiple of 8
+    __syncthreads();
+    for (int i = threadIdx.x; i &lt; MT * kTileK; i += kThreads) {
+      const int m = i / kTileK, k = i % kTileK;
+      xs[m][k] = (m &lt; M &amp;&amp; k &lt; klen) ? __half2float(x[(size_t)m * K + kt + k]) : 0.f;
+    }
+    __syncthreads();
+    if (!cols_ok) continue;
+
+    for (int r = warp; r &lt; klen / 8; r += kWarps) {
+      const int krow = kt / 8 + r;
+      const int4 q = *reinterpret_cast&lt;const int4*&gt;(qweight + (size_t)krow * N + n0);
+      const int g = (kt + r * 8) / group_size;
+      const uint2 s2 = *reinterpret_cast&lt;const uint2*&gt;(scales + (size_t)g * N + n0);
+      const uint2 z2 = *reinterpret_cast&lt;const uint2*&gt;(zeros + (size_t)g * N + n0);
+      const half* sh = reinterpret_cast&lt;const half*&gt;(&amp;s2);
+      const half* zh = reinterpret_cast&lt;const half*&gt;(&amp;z2);
+      const int qs[kColsPerThread] = {q.x, q.y, q.z, q.w};
+
+#pragma unroll
+      for (int c = 0; c &lt; kColsPerThread; ++c) {
+        const float s = __half2float(sh[c]);
+        const float z = __half2float(zh[c]);
+#pragma unroll
+        for (int i = 0; i &lt; 8; ++i) {
+          const float qv = static_cast&lt;float&gt;((qs[c] &gt;&gt; (4 * i)) &amp; 0xF);
+          const float w = __half2float(__float2half_rn((qv - z) * s));
+#pragma unroll
+          for (int m = 0; m &lt; MT; ++m) acc[m][c] += w * xs[m][r * 8 + i];
+        }
+      }
+    }
+  }
+
+  if (cols_ok) {
+#pragma unroll
+    for (int m = 0; m &lt; MT; ++m)
+#pragma unroll
+      for (int c = 0; c &lt; kColsPerThread; ++c)
+        atomicAdd(&amp;red[m][lane * kColsPerThread + c], acc[m][c]);
+  }
+  __syncthreads();
+
+  for (int i = threadIdx.x; i &lt; MT * kColsPerBlock; i += kThreads) {
+    const int m = i / kColsPerBlock, col = i % kColsPerBlock;
+    const int n = blockIdx.x * kColsPerBlock + col;
+    if (m &gt;= M || n &gt;= N) continue;</code></pre></div></section>
+</main>
+<footer class="border-t border-line mt-10">
+  <div class="max-w-6xl mx-auto px-4 py-6 text-sm text-muted">
+    Generated from <code class="font-mono">results/raw/*.json</code> by
+    <code class="font-mono">python -m kernels.assets</code>. Source on
+    <a class="text-accent" href="https://github.com/Charlie-Gzz/llm-decode-kernels">GitHub</a>.
+  </div>
+</footer>
+</body>
+</html>

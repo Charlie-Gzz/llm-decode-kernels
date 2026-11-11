@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SwiGLU | llm-decode-kernels</title>
+<meta name="description" content="Triton and CUDA kernels for LLM decoding, benchmarked on L4 and H100.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  colors: { bg: "#0B0F17", panel: "#131A26", line: "#1F2937", ink: "#E5E7EB", muted: "#9CA3AF",
+            accent: "#A3E635" },
+  fontFamily: { sans: ["Inter", "sans-serif"], mono: ["JetBrains Mono", "monospace"] } } } };
+</script>
+<style>
+  body { background: #0B0F17; color: #E5E7EB; }
+  pre code { font-size: 12.5px; line-height: 1.55; }
+  table td, table th { padding: 6px 10px; border-bottom: 1px solid #1F2937; text-align: right; }
+  table td:first-child, table th:first-child { text-align: left; }
+  .chart img { width: 100%; height: auto; border-radius: 10px; border: 1px solid #1F2937; }
+</style>
+</head>
+<body class="font-sans antialiased">
+<header class="border-b border-line">
+  <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center gap-3 justify-between">
+    <a href="index.html" class="flex items-center gap-2 font-semibold">
+      <span class="inline-block w-3 h-3 rounded-sm bg-accent"></span>llm-decode-kernels</a>
+    <nav class="flex flex-wrap gap-1"><a href="index.html" class="px-3 py-1.5 rounded-md text-sm text-muted hover:text-ink">Overview</a><a href="rmsnorm.html" class="px-3 py-1.5 rounded-md text-sm text-muted hover:text-ink">RMSNorm</a><a href="swiglu.html" class="px-3 py-1.5 rounded-md text-sm bg-panel text-ink border border-line">SwiGLU</a><a href="w4a16.html" class="px-3 py-1.5 rounded-md text-sm text-muted hover:text-ink">W4A16 matmul</a><a href="e2e.html" class="px-3 py-1.5 rounded-md text-sm text-muted hover:text-ink">End to end</a><a href="cost.html" class="px-3 py-1.5 rounded-md text-sm text-muted hover:text-ink">Cost</a></nav>
+  </div>
+</header>
+<main class="max-w-6xl mx-auto px-4 py-8 space-y-10">
+<h1 class="text-3xl font-bold">Fused SwiGLU</h1><p class="text-muted max-w-3xl">The MLP activation is silu(gate) * up. With a merged gate/up projection the kernel reads both halves of one tensor in place and writes the product in one pass: 3 bytes moved per 2 read, the minimum possible.</p><section class="space-y-4"><h2 class="text-xl font-semibold">Kernel</h2><div class="bg-panel border border-line rounded-xl overflow-x-auto"><div class="px-4 py-2 text-xs text-muted border-b border-line font-mono">kernels/swiglu.py</div><pre class="p-4"><code class="font-mono">@triton.jit
+def _swiglu_kernel(
+    g_ptr, u_ptr, out_ptr,
+    stride_g, stride_u, stride_out,
+    I,
+    BLOCK: tl.constexpr,
+):
+    row = tl.program_id(0)
+    cols = tl.program_id(1) * BLOCK + tl.arange(0, BLOCK)
+    mask = cols &lt; I
+    g = tl.load(g_ptr + row * stride_g + cols, mask=mask, other=0.0)
+    u = tl.load(u_ptr + row * stride_u + cols, mask=mask, other=0.0)
+    gf = g.to(tl.float32)
+    act = (gf * tl.sigmoid(gf)).to(g.dtype)  # silu in fp32, rounded like F.silu
+    tl.store(out_ptr + row * stride_out + cols, act * u, mask=mask)</code></pre></div></section><p class="text-xs text-muted">Times are CUDA-graph medians over 3 sweeps with rotating buffers (working set at least 4x L2). * = more than 10% spread between sweeps.</p>
+</main>
+<footer class="border-t border-line mt-10">
+  <div class="max-w-6xl mx-auto px-4 py-6 text-sm text-muted">
+    Generated from <code class="font-mono">results/raw/*.json</code> by
+    <code class="font-mono">python -m kernels.assets</code>. Source on
+    <a class="text-accent" href="https://github.com/Charlie-Gzz/llm-decode-kernels">GitHub</a>.
+  </div>
+</footer>
+</body>
+</html>
