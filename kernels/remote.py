@@ -162,6 +162,7 @@ TASKS = {
     "bench": _lazy("kernels.bench.sweep", "run"),
     "e2e": _lazy("kernels.e2e.run", "run"),
     "profile": _lazy("kernels.bench.profile", "run"),
+    "collect": _lazy("kernels.bench.sweep", "collect"),
     "multi": task_multi,
 }
 
@@ -169,7 +170,7 @@ TASKS = {
 def run_task(task: str, params: dict) -> dict:
     expected = params.pop("expect_gpu", None)
     t0 = time.time()
-    info = check_gpu(expected) if task != "download" else env_info()
+    info = check_gpu(expected) if task not in ("download", "collect") else env_info()
     os.chdir("/root")
     result = TASKS[task](params)
     result["env"] = info

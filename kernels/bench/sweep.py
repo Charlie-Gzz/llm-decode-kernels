@@ -246,12 +246,26 @@ def aggregate(rows: list[dict], spec: dict) -> list[dict]:
     return out
 
 
+def collect(params: dict) -> dict:
+    """CPU-only: rebuild results from a checkpoint on the Volume (e.g. after a crashed run)."""
+    gpu = params["gpu"]
+    ckpt = CKPT_DIR / f"{params['run_id']}_{gpu}.jsonl"
+    rows = [json.loads(line) for line in ckpt.read_text().splitlines()]
+    gpu_name = next((r["gpu_name"] for r in rows if "gpu_name" in r), gpu)
+    return {"ok": True, "task": "bench", "run_id": params["run_id"], "gpu": gpu,
+            "spec": config.GPU_SPECS[gpu], "results": aggregate(rows, config.GPU_SPECS[gpu]),
+            "raw": rows, "errors": [r for r in rows if "error" in r], "env": {"gpu_name": gpu_name},
+            "collected_from_checkpoint": True,
+            "summary": f"{len(rows)} rows from {ckpt.name}"}
+
+
 def run(params: dict) -> dict:
     from kernels.remote import env_info
 
     _setup_compile()
     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True  # torch default
-    gpu = config.gpu_key(env_info()["gpu_name"])
+    env = env_info()
+    gpu = config.gpu_key(env["gpu_name"])
     spec = config.GPU_SPECS[gpu]
     run_id = params["run_id"]
     kernels = params.get("kernels", ["copy", "rmsnorm", "swiglu", "w4a16"])
@@ -280,6 +294,7 @@ def run(params: dict) -> dict:
                     finished = False
                     break
                 row = {"key": key, "sweep": sweep, "kernel": case.kernel, "impl": case.impl,
+                       "gpu_name": env["gpu_name"],
                        "shape": case.shape, "bytes": case.bytes, "flops": case.flops,
                        "note": case.note}
                 try:
