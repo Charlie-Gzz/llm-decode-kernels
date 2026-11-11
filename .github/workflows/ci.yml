@@ -1,0 +1,26 @@
+# CPU only. GPU tests run on Modal by hand (python -m kernels.gpu pytest), never in CI.
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-cpu-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      TRITON_INTERPRET: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install (CPU PyTorch, Triton interpreter)
+        run: |
+          pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install triton==3.9.0 transformers==5.22.2 numpy pytest ruff
+      - name: Lint
+        run: ruff check .
+      - name: Kernel tests in the Triton interpreter
+        run: python -m pytest -q -p no:cacheprovider tests
