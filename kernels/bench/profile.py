@@ -78,7 +78,9 @@ def target():
 
 def _ncu() -> dict:
     ncu = shutil.which("ncu") or "/usr/local/cuda/bin/ncu"
-    cmd = [ncu, "--profile-from-start", "off", "--nvtx", "--print-nvtx-rename", "kernel",
+    # Modal containers cannot lock GPU clocks, so profile at the clocks the GPU is running.
+    cmd = [ncu, "--profile-from-start", "off", "--clock-control", "none",
+           "--nvtx", "--print-nvtx-rename", "kernel",
            "--csv", "--page", "raw", "--metrics", ",".join(METRICS),
            sys.executable, "-m", "kernels.bench.profile", "target"]
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd="/root")

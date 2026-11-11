@@ -48,6 +48,20 @@ def test_bias_both_paths(device):
     _check(1, 64, 256, device, bias=True, config={**CFG, "SPLIT_K": 2})
 
 
+GEMV = dict(GEMV=True, BLOCK_N=32, BLOCK_K=64, SPLIT_K=1)
+
+
+@pytest.mark.parametrize("N,K", [(64, 256), (40, 384), (96, 128)])
+@pytest.mark.parametrize("split", [1, 3])
+def test_gemv(N, K, split, device):
+    _check(1, N, K, device, config={**GEMV, "SPLIT_K": split})
+
+
+def test_gemv_bias(device):
+    _check(1, 64, 256, device, bias=True, config=GEMV)
+    _check(1, 64, 256, device, bias=True, config={**GEMV, "SPLIT_K": 2, "BLOCK_K": 128})
+
+
 def test_block_k_128(device):
     _check(5, 64, 256, device, config={**CFG, "BLOCK_K": 128, "BLOCK_N": 64})
 

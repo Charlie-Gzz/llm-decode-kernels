@@ -43,3 +43,17 @@
 - **`torch.compile` baseline:** default mode, `fullgraph=True`, `dynamic=False`, compiled per shape.
 - **Correctness:** `torch.testing.assert_close` against an fp32 PyTorch reference with per-kernel
   tolerances logged in the test files, random data and odd shapes.
+
+## Changes to the benchmark method after seeing results
+
+- **2026-11-11, output buffers now rotate too.** The first M2 run (`results/raw/multi_L4_20261111T201840Z.json`,
+  run_id `m2`) reported up to **171% of the L4's 300 GB/s** for mid-size RMSNorm/SwiGLU shapes
+  (e.g. RMSNorm M=4096 N=1536 at 512 GB/s), which is physically impossible. Cause: inputs
+  rotated, but each call's output was freed inside the graph capture, so the next call got the
+  same buffer and its writes stayed in L2. Large shapes (outputs bigger than L2) were already
+  right: 234-243 GB/s, 78-81% of peak. Fix: keep every call's output alive during capture so
+  writes rotate as well. M2 is rerun as `m2-v2`; the `m2` numbers are kept in the raw file but
+  not used in charts (the chart loader prefers the newer run).
+- **2026-11-11, torchao rotating copies sized by real int4 bytes** (its tensor subclass reports
+  the bf16 size, which gave 2 copies instead of ~7 and let part of the working set sit in L2).
+  Decode sweep rerun as `m3-decode-v2`.

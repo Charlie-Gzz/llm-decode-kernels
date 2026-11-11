@@ -52,10 +52,12 @@ def time_graph(fn: Callable, sets: list) -> float:
     torch.cuda.current_stream().wait_stream(stream)
     torch.cuda.synchronize()
 
+    # Keep every call's output alive during capture so each call writes its own buffer. If they
+    # were freed, the graph pool would hand the same buffer to the next call and writes would
+    # stay in L2 (first M2 run measured up to 171% of DRAM peak because of this).
     graph = torch.cuda.CUDAGraph()
     with torch.cuda.graph(graph):
-        for args in sets:
-            fn(*args)
+        outs = [fn(*args) for args in sets]
     graph.replay()
     torch.cuda.synchronize()
 
@@ -74,7 +76,7 @@ def time_graph(fn: Callable, sets: list) -> float:
         end.record()
         torch.cuda.synchronize()
         samples.append(start.elapsed_time(end) / (replays * len(sets)))
-    del graph
+    del graph, outs
     return statistics.median(samples)
 
 
@@ -94,8 +96,8 @@ def time_eager(fn: Callable, sets: list) -> float:
     for _ in range(MEASUREMENTS):
         start.record()
         for _ in range(loops):
-            for args in sets:
-                fn(*args)
+            outs = [fn(*args) for args in sets]  # distinct output buffers within a pass
+            del outs
         end.record()
         torch.cuda.synchronize()
         samples.append(start.elapsed_time(end) / (loops * len(sets)))

@@ -44,6 +44,9 @@ image = (
     .add_local_dir("tests", remote_path="/root/tests")
     .add_local_file("pyproject.toml", remote_path="/root/pyproject.toml")
     .add_local_python_source("kernels")
+    # add_local_python_source ships only .py files; the CUDA source must be added explicitly.
+    .add_local_file("kernels/cuda/w4a16_decode.cu",
+                    remote_path="/root/kernels/cuda/w4a16_decode.cu")
 )
 
 COMMON = dict(image=image, volumes={CACHE: cache}, max_containers=1)
