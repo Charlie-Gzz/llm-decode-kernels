@@ -7,7 +7,7 @@
 import sys
 
 from kernels import ledger
-from kernels.assets import charts, site
+from kernels.assets import charts, readme, site
 from kernels.assets.style import ROOT
 
 ledger.render()
@@ -17,5 +17,7 @@ if "--gif" in sys.argv:
 
     made += gif.capture()
 made += site.build()
+readme.build()
+made.append(ROOT / "README.md")
 for p in made:
     print(p.relative_to(ROOT))
