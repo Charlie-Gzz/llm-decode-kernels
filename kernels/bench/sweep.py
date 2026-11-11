@@ -196,7 +196,8 @@ def cases_w4a16(quick: bool, phase: str = "all"):
                             copy.deepcopy(ao))
 
                 yield Case("w4a16", "torchao", shape, fn=lambda x, lin: lin(x), make=make_ao,
-                           bytes=w4_bytes, flops=flops, note="torchao int4 tinygemm, bf16")
+                           bytes=w4_bytes, flops=flops, note="torchao int4 tinygemm, bf16",
+                           extra={"set_bytes": w4_bytes})
 
 
 KERNELS = {
@@ -298,7 +299,8 @@ def run(params: dict) -> dict:
                        "shape": case.shape, "bytes": case.bytes, "flops": case.flops,
                        "note": case.note}
                 try:
-                    row.update(harness.measure(case.fn, case.make, spec["l2_mb"]))
+                    row.update(harness.measure(case.fn, case.make, spec["l2_mb"],
+                                               set_bytes=case.extra.get("set_bytes")))
                 except Exception as e:
                     row["error"] = f"{type(e).__name__}: {e}"[:500]
                     print(f"[sweep] ERROR {key}: {row['error']}")

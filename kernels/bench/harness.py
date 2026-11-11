@@ -103,12 +103,15 @@ def time_eager(fn: Callable, sets: list) -> float:
 
 
 def measure(fn: Callable, make_inputs: Callable[[], tuple], l2_mb: float,
-            eager: bool = True) -> dict:
-    """Build rotating copies with `make_inputs()`, time `fn(*inputs)` both ways."""
+            eager: bool = True, set_bytes: int | None = None) -> dict:
+    """Build rotating copies with `make_inputs()`, time `fn(*inputs)` both ways.
+
+    `set_bytes` overrides the size of one input set, for inputs whose logical size differs from
+    what they occupy (torchao's int4 tensor subclass reports its bf16 size)."""
     first = make_inputs()
     fn(*first)  # autotuning / torch.compile happen here, outside any timing or capture
     torch.cuda.synchronize()
-    copies = n_copies(tensor_bytes(first), l2_mb)
+    copies = n_copies(set_bytes or tensor_bytes(first), l2_mb)
     sets = [first] + [make_inputs() for _ in range(copies - 1)]
     out = {"copies": copies, "graph_ms": time_graph(fn, sets)}
     if eager:
