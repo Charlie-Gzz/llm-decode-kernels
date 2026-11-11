@@ -1,0 +1,4 @@
+{"deadline_s": 1560, "steps": [
+ {"task": "bench", "run_id": "final", "kernels": ["copy", "rmsnorm", "swiglu"], "sweeps": 3},
+ {"task": "bench", "run_id": "final", "kernels": ["w4a16_decode"], "sweeps": 3}
+]}
