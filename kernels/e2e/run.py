@@ -83,6 +83,8 @@ class GraphDecoder:
     def capture(self, ids):
         # Warm up (autotuning, CUDA kernel build) outside the graph, then reset state.
         self.prefill(ids)
+        self._step()  # first step on the default stream: path pickers (which time in their own
+        torch.cuda.synchronize()  # CUDA graphs) run here, not inside the side-stream warmup
         s = torch.cuda.Stream()
         s.wait_stream(torch.cuda.current_stream())
         with torch.cuda.stream(s):

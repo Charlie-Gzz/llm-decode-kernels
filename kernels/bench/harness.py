@@ -103,6 +103,20 @@ def time_graph(fn: Callable, sets: list) -> float:
     return statistics.median(samples)
 
 
+def time_rotating(fn: Callable, args: tuple, rotate: tuple, max_copies: int = 16) -> float:
+    """Graph time of fn(*args) with the tensors at positions `rotate` copied until the working
+    set exceeds L2. Used by the kernels' path pickers so they choose with the same method the
+    benchmark reports (eager do_bench is dominated by Python launch overhead at decode sizes)."""
+    l2_mb = torch.cuda.get_device_properties(0).L2_cache_size / 2**20
+    nbytes = sum(tensor_bytes(args[i]) for i in rotate)
+    copies = min(n_copies(nbytes, l2_mb), max_copies)
+    sets = [args] + [
+        tuple(a.clone() if i in rotate else a for i, a in enumerate(args))
+        for _ in range(copies - 1)
+    ]
+    return time_graph(fn, sets)
+
+
 def time_eager(fn: Callable, sets: list) -> float:
     """Median ms per call, launched from Python (includes launch overhead)."""
     for args in sets[:WARMUP_CALLS]:

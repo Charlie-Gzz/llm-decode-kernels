@@ -28,14 +28,16 @@ def _ext():
 
 def _pick_split(x2, qweight, scales, zeros, bias, group_size, key) -> int:
     """Time each split-K factor once per shape and keep the fastest (same idea as Triton's
-    autotuner, including the zero-fill and cast that split-K needs)."""
-    import triton
+    autotuner, including the zero-fill and cast that split-K needs). Timed in a CUDA graph with
+    rotating weight copies, like the benchmark, so launch overhead does not decide."""
+    from kernels.bench.harness import time_rotating
 
     times = {}
     for split in SPLITS:
-        def call(split=split):
-            return _ext().w4a16_decode(x2, qweight, scales, zeros, bias, group_size, split)
-        times[split] = triton.testing.do_bench(call, warmup=25, rep=100)
+        def call(x, q, s, z, split=split):
+            return _ext().w4a16_decode(x, q, s, z, bias, group_size, split)
+        call(x2, qweight, scales, zeros)
+        times[split] = time_rotating(call, (x2, qweight, scales, zeros), rotate=(0, 1, 2, 3))
     _split_choice[key] = min(times, key=times.get)
     return _split_choice[key]
 

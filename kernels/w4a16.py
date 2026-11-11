@@ -281,13 +281,19 @@ PATHS = {"direct": _run_direct, "split": _run_split, "gemv": _run_gemv,
 
 def _pick_decode_path(args, key) -> str:
     """Time the best config of each path once per shape (including the zero-fill and cast that
-    split-K needs) and keep the fastest. GEMV paths only exist for M == 1."""
+    split-K needs) and keep the fastest. GEMV paths only exist for M == 1.
+
+    Timed like the benchmark: CUDA graph, rotating weight copies. The first version used eager
+    do_bench, where Python launch overhead hid the kernel differences and biased the choice
+    toward paths with fewer launches (8b_up at batch 1 got 67% instead of ~81% of peak)."""
+    from kernels.bench.harness import time_rotating
+
     names = ["direct", "split"] + (["gemv", "gemv_split"] if args[0].shape[0] == 1 else [])
     times = {}
     for name in names:
         fn = PATHS[name]
         fn(*args)  # runs the autotuner for this path
-        times[name] = triton.testing.do_bench(lambda fn=fn: fn(*args), warmup=25, rep=100)
+        times[name] = time_rotating(fn, args, rotate=(0, 1, 2, 3))
     _decode_choice[key] = min(times, key=times.get)
     return _decode_choice[key]
 

@@ -1,7 +1,8 @@
 {"deadline_s": 1560, "steps": [
+ {"task": "pytest", "args": "tests/test_w4a16_cuda.py tests/test_w4a16.py -k \"autotuned_decode or cuda_decode_autosplit\""},
  {"task": "e2e", "backends": ["fp16", "ours", "ours_cuda", "w4_ref"]},
+ {"task": "bench", "run_id": "final2", "kernels": ["w4a16_decode"], "impls": ["triton", "cuda"], "sweeps": 3},
  {"task": "profile"},
  {"task": "power", "seconds": 4},
- {"task": "bench", "run_id": "final", "kernels": ["w4a16_prefill"], "sweeps": 3},
- {"task": "bench", "run_id": "final", "kernels": ["w4a16_decode"], "sweeps": 3}
+ {"task": "bench", "run_id": "final", "kernels": ["w4a16_prefill"], "sweeps": 3}
 ]}

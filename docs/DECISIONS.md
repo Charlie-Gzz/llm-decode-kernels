@@ -58,3 +58,10 @@
 - **2026-11-11, torchao rotating copies sized by real int4 bytes** (its tensor subclass reports
   the bf16 size, which gave 2 copies instead of ~7 and let part of the working set sit in L2).
   Decode sweep rerun as `m3-decode-v2`.
+- **2026-11-11, decode path picker times in CUDA graphs.** The per-shape choice between the
+  direct, split-K and GEMV paths (and the CUDA kernel's split-K factor) was made with eager
+  `do_bench`, where Python launch overhead dominates at decode sizes and favours paths with fewer
+  launches. Final run A (`final`) shows the effect: Triton 8b_up batch 1 picked the tensor-core
+  path at 67% of peak while the GEMV path reaches ~81%. The pickers now time with the benchmark's
+  own method (graph, rotating weights). Decode sweeps for Triton and CUDA are rerun as `final2`;
+  the `final` rows for fp16, torchao, torch.compile and naive are unaffected and kept.
