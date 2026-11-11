@@ -30,7 +30,7 @@ def stop_stray_apps() -> list[str]:
         state = str(a.get("State", a.get("state", ""))).lower()
         app_id = a.get("App ID", a.get("app_id"))
         if app_id and any(s in state for s in ACTIVE) and "stopped" not in state:
-            subprocess.run(MODAL + ["app", "stop", app_id], check=False)
+            subprocess.run(MODAL + ["app", "stop", "-y", app_id], check=False)
             stopped.append(f"{app_id} ({state})")
     if stopped:
         print(f"[gpu] stopped stray apps: {stopped}  <- log this in the ledger notes")
