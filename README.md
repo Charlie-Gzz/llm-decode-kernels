@@ -33,6 +33,9 @@ swapped into Qwen2.5-1.5B.
 - **Model size matters**: on Qwen2.5-0.5B the same kernels give 1.39x (vs 1.99x on 1.5B),
   because the fp16 `lm_head` is a bigger share of each token, and 4-bit RTN costs more quality
   (perplexity 15.8 to 19.1).
+- **Quantizing `lm_head` too (follow-up)** takes the L4 to 2.36x (140 tok/s), at a further
+  perplexity cost (11.90 to 12.59). The headline numbers keep `lm_head` in fp16; see
+  [the follow-up table](#follow-up-quantizing-lm_head-too).
 - **Triton vs CUDA C++**: the Triton kernel ended up faster at every shape (77% vs 70% of peak at
   batch 1 on the L4, 62% vs 29% at batch 16). Details in
   [docs/TRITON_VS_CUDA.md](docs/TRITON_VS_CUDA.md).
@@ -46,7 +49,8 @@ swapped into Qwen2.5-1.5B.
 ![Roofline on L4](assets/charts/roofline_l4.png)
 
 More charts, per-kernel pages, profiler output and the H100 results are on the results site
-(`site/index.html`, open it locally).
+([charlie-gzz.github.io/llm-decode-kernels](https://charlie-gzz.github.io/llm-decode-kernels/),
+or open `site/index.html` locally).
 
 ### End to end, Qwen2.5-1.5B-Instruct
 
@@ -76,6 +80,28 @@ round-to-nearest costs more quality.
 | Qwen2.5-0.5B-Instruct | 128.4 | 178.8 | 1.39x | 3.0x | 15.79 | 19.09 |
 | Qwen2.5-1.5B-Instruct | 59.5 | 118.2 | 1.99x | 3.5x | 10.65 | 11.90 |
 <!-- /gen:sizes -->
+
+### Follow-up: quantizing lm_head too
+
+After the main results, the output layer (`lm_head`, 0.47 GB in fp16, tied to the embeddings)
+was the biggest single read per token on the L4. This run quantizes a copy of it with the same
+kernels; the embedding lookup keeps the fp16 table. All rows ran in one L4 container, so the
+speedups are against that container's own fp16 run. The decision to report this next to the
+headline config, not in place of it, was logged before the run.
+
+<!-- gen:lm_head -->
+| L4, batch 1 | Decode tok/s | vs fp16 | WikiText-2 ppl | lm_head bytes read |
+|---|---|---|---|---|
+| fp16 | 59.6 | 1.00x | 10.654 | 467 MB |
+| 4-bit layers, fp16 lm_head (headline config) | 118.2 | 1.98x | 11.900 | 467 MB |
+| 4-bit layers and lm_head | 140.5 | 2.36x | 12.587 | 124 MB |
+| same weights, dequant reference | - | - | 12.588 | 124 MB |
+| FP8 layers and lm_head | 100.5 | 1.69x | 10.793 | 234 MB |
+<!-- /gen:lm_head -->
+
+4-bit `lm_head` saves about 0.34 GB of reads per token and adds 0.69 perplexity. The dequantize
+reference with the same weights matches our kernels, so again the cost is from round-to-nearest
+quantization. FP8 for everything stays close to fp16 quality.
 
 ### 4-bit matmul (W4A16)
 
@@ -127,7 +153,7 @@ Median spread between the 3 sweeps: 0.3%. 2 of 796 measurements spread more than
 ### Cost
 
 <!-- gen:cost -->
-Total GPU time: **3.01 GPU-hours**, estimated **$5.80** (cap $30), of which H100: 50 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
+Total GPU time: **3.12 GPU-hours**, estimated **$5.90** (cap $30), of which H100: 50 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
 <!-- /gen:cost -->
 
 ## Quickstart
@@ -209,8 +235,9 @@ Every judgment call and the benchmark method are in [docs/DECISIONS.md](docs/DEC
 
 - Quantization is plain round-to-nearest. AWQ or GPTQ would lose less quality; they were out of
   scope. The perplexity rise (+1.25 on WikiText-2) belongs to the quantization method.
-- Embeddings, `lm_head`, attention and RoPE stay fp16. On a 1.5B model the fp16 `lm_head`
-  (0.47 GB) is a large share of each token's reads, which caps the end-to-end speedup.
+- Embeddings, `lm_head`, attention and RoPE stay fp16 in the headline config. On a 1.5B model
+  the fp16 `lm_head` (0.47 GB) is a large share of each token's reads, which caps the
+  end-to-end speedup. Quantizing `lm_head` too was measured only on the L4, in a follow-up run.
 - End-to-end numbers are batch 1 only. The CUDA kernel covers decode (batch up to 16) only, and
   its batch-16 path runs on CUDA cores, not tensor cores.
 - On the H100 the batch-1 matmul is limited by unpacking work, not memory (34-45% of peak), and

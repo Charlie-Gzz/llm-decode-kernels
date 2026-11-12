@@ -3,7 +3,7 @@
 ## Status
 - **M0-M8 done.** Final results on L4 and H100 are in `results/raw/`, assets regenerated,
   README, site and handoff written.
-- **GPU spend:** est. $5.80 (3.0 GPU-hours; H100 50 of 90 min). Dev $1.42 of $22, final runs
+- **GPU spend:** est. $5.90 (3.1 GPU-hours; H100 50 of 90 min). Dev $1.53 of $22, final runs
   $4.37 of the $8 reserve. See `docs/GPU_LEDGER.md`.
 
 ## Done
@@ -19,16 +19,18 @@
   the dequant reference.
 - **M6** final runs: `final` + `final2` on L4, `final` on H100 (one preemption, resumed).
 - **M7** charts (`python -m kernels.assets`), site in `site/`, explainer GIF, screenshots,
-  DEMO_SCRIPT, SLIDES_OUTLINE, PORTFOLIO_CARD, Pages workflow (manual, not enabled).
+  DEMO_SCRIPT, SLIDES_OUTLINE, PORTFOLIO_CARD, Pages workflow (manual).
 - **M8** README, HANDOFF.
 - Stretch 1 (residual add fused into the next norm) is part of the runner from the start.
 - Stretch 2: Qwen2.5-0.5B end to end on L4 (1.39x decode).
 - Stretch 3: FP8 weight-only matmul, e2e and sweep on L4 (1.54x decode, ppl +0.07).
 
+- Follow-up (user approved): `lm_head` quantized too, L4 run `multi_L4_20261112T052407Z`:
+  2.36x decode (140.5 tok/s), ppl 12.587; FP8 incl. lm_head 1.69x, ppl 10.793.
+- GitHub description and 15 topics set; repo made public and Pages enabled (2026-11-12).
+
 ## Next step
-- Waiting on the user's answers in `docs/QUESTIONS.md` (publish, next optimization).
-- GitHub description and 15 topics set (2026-11-11, at the user's request), from PLAN.md
-  section 8 plus the L4 headline number. Repo is still private.
+- Nothing pending. All questions in `docs/QUESTIONS.md` are answered.
 
 ## Restart checklist
 1. `python -m modal app list` and stop anything running (`modal app stop -y <id>`).

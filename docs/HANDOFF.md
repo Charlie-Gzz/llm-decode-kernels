@@ -36,7 +36,7 @@ Full benchmark reproduction: `runs/README.md`.
 WikiText-2 perplexity 10.654 (fp16) -> 11.900 (4-bit RTN); the dequantize-then-cuBLAS reference
 gives 11.901, so the kernels add no error.
 
-**GPU time and spend:** 3.0 GPU-hours, estimated $5.80 of the $30 cap (dev $1.42 of $22; final
+**GPU time and spend:** 3.1 GPU-hours, estimated $5.90 of the $30 cap (dev $1.53 of $22; final
 runs $4.37 of the $8 reserve; H100 50 of 90 minutes). No cap was hit. Modal's own billing
 report is lower than the ledger (the ledger rounds up). Ledger:
 `docs/GPU_LEDGER.md`, reconciled against `modal billing report`.
@@ -44,17 +44,20 @@ report is lower than the ledger (the ledger rounds up). Ledger:
 ## Where things are
 - Results: `results/raw/*.json` (every GPU run, with GPU, driver, CUDA, Triton and torch versions).
 - Charts: `assets/charts/*.png|svg`. Screenshots: `assets/screens/`. GIF: `assets/explainer.gif`.
-- Site: `site/index.html` (open locally; Pages workflow prepared, not enabled).
+- Site: `site/index.html`, also on GitHub Pages (deployed by `.github/workflows/pages.yml`,
+  run by hand).
 - Docs: `docs/DECISIONS.md` (every judgment call, including method changes after seeing data),
   `docs/TRITON_VS_CUDA.md`, `docs/DEMO_SCRIPT.md`, `docs/SLIDES_OUTLINE.md`,
   `docs/PORTFOLIO_CARD.md`, `docs/QUESTIONS.md`.
 
-## Top questions (details and the rest in `docs/QUESTIONS.md`)
-1. **Make the repo public and enable Pages?** Recommendation: yes, after you read the README and
-   site; then set the description and topics from PLAN.md section 8.
-2. **Next optimization?** Recommendation: quantize `lm_head` with the same kernel (~$0.50 to
-   measure); it is now the biggest single cost per token on the L4.
-3. **AWQ/GPTQ?** Recommendation: keep out of scope; the kernel format can take such weights later.
+**Follow-up (2026-11-12, L4):** quantizing `lm_head` too gives 140.5 tok/s, 2.36x vs fp16 in the
+same container, with perplexity 12.59 (dequant reference 12.59). FP8 for layers and `lm_head`:
+100.5 tok/s (1.69x), perplexity 10.79. Reported next to the headline config in the README.
+
+## Decisions (all answered 2026-11-12, details in `docs/QUESTIONS.md`)
+1. **Repo public with Pages:** done, with description and topics. History scanned for secrets first.
+2. **Next optimization:** `lm_head` quantized as a follow-up (above).
+3. **AWQ/GPTQ:** kept out of scope. 4. **GPU:** L4 only. 5. **Budget:** unchanged; Volume kept.
 
 ## Skipped, changed or estimated, and why
 - **Benchmark method changes after seeing data** (all logged with the earlier numbers in

@@ -111,6 +111,31 @@ def sizes_table() -> str:
     return "\n".join(lines)
 
 
+LM_LABELS = {"fp16": "fp16", "ours": "4-bit layers, fp16 lm_head (headline config)",
+             "ours_lm": "4-bit layers and lm_head", "w4_ref_lm": "same weights, dequant reference",
+             "ours_fp8_lm": "FP8 layers and lm_head"}
+
+
+def lm_head_table() -> str:
+    """Follow-up: lm_head quantized too. One container, so speedups are against its own fp16."""
+    lines = ["| L4, batch 1 | Decode tok/s | vs fp16 | WikiText-2 ppl | lm_head bytes read |",
+             "|---|---|---|---|---|"]
+    res = data.followup_results().get("L4")
+    if not res:
+        return "Not run yet."
+    b = res["backends"]
+    base = b.get("fp16", {}).get("decode", {}).get("tok_s")
+    for key, label in LM_LABELS.items():
+        r = b.get(key)
+        if not r:
+            continue
+        tok = r.get("decode", {}).get("tok_s")
+        speed = f"{tok / base:.2f}x" if tok and base else "-"
+        lines.append(f"| {label} | {_fmt(tok)} | {speed} | {r['ppl']:.3f} | "
+                     f"{r['weights']['lm_head_read'] / 1e6:.0f} MB |")
+    return "\n".join(lines)
+
+
 def cost() -> str:
     t = ledger.totals()
     return (f"Total GPU time: **{t['gpu_hours']:.2f} GPU-hours**, estimated **${t['usd']:.2f}** "
@@ -132,7 +157,7 @@ def build() -> str:
     rows, e2e = data.bench_rows(), data.e2e_results()
     blocks = {"headline": headline(rows, e2e), "kernels": kernel_table(rows),
               "w4a16": w4_table(rows), "e2e": e2e_table(e2e), "cost": cost(),
-              "sizes": sizes_table(),
+              "sizes": sizes_table(), "lm_head": lm_head_table(),
               "spread": spread_note(rows)}
     text = README.read_text(encoding="utf-8")
     for name, body in blocks.items():
