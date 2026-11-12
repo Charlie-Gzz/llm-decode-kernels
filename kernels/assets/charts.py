@@ -34,8 +34,8 @@ ELEMWISE_FLOPS = {"rmsnorm": 5, "swiglu": 5}
 def _save(fig, name: str) -> list:
     OUT.mkdir(parents=True, exist_ok=True)
     paths = [OUT / f"{name}.png", OUT / f"{name}.svg"]
-    fig.savefig(paths[0], dpi=DPI)
-    fig.savefig(paths[1])
+    fig.savefig(paths[0], dpi=DPI, metadata={"Software": None})
+    fig.savefig(paths[1], metadata={"Date": None})
     paths[1].write_bytes(paths[1].read_bytes().replace(b"\r\n", b"\n"))  # LF on Windows too
     plt.close(fig)
     return paths

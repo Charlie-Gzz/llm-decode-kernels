@@ -65,6 +65,7 @@ def setup_matplotlib():
         "lines.linewidth": 2,
         "lines.markersize": 7,
         "svg.fonttype": "path",  # SVGs in <img> cannot use page web fonts
+        "svg.hashsalt": "llm-decode-kernels",  # stable ids: regenerating does not churn git
     })
 
 
