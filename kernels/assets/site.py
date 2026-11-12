@@ -324,7 +324,7 @@ def page_e2e(e2e):
                     "The swapped layers are timed alone in their own CUDA graph; the rest is the "
                     "full step minus that. The fp16 lm_head (151936 x 1536) alone reads 0.47 GB "
                     "per token, so it becomes the next thing to fix.")
-    for g, res in e2e.items():
+    for g, res in sorted(e2e.items(), key=lambda kv: kv[0] != "L4"):
         b = res["backends"]
         rows = []
         for name, r in b.items():

@@ -80,7 +80,7 @@ def e2e_table(e2e) -> str:
     lines = ["| GPU | Backend | Decode tok/s (batch 1) | Swapped layers, ms/token | "
              "Prefill tok/s (T=2048) | WikiText-2 ppl | Linear weights |",
              "|---|---|---|---|---|---|---|"]
-    for gpu, res in e2e.items():
+    for gpu, res in sorted(e2e.items(), key=lambda kv: kv[0] != "L4"):
         for name, r in res["backends"].items():
             d = r.get("decode")
             pre = next((p["tok_s"] for p in r.get("prefill", []) if p["T"] == 2048), None)
