@@ -104,9 +104,10 @@ def task_pytest(params: dict) -> dict:
 
 
 def task_download(params: dict) -> dict:
+    from kernels import config
     from kernels.e2e.data import download_all
 
-    return {"ok": True, **download_all()}
+    return {"ok": True, **download_all(params.get("model", config.MODEL_ID))}
 
 
 def task_multi(params: dict) -> dict:

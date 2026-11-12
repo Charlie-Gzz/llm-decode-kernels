@@ -17,6 +17,7 @@ import time
 import torch
 import torch.nn.functional as F
 
+from kernels import config
 from kernels.bench.harness import capture
 from kernels.e2e.model import QwenRunner, make_backend
 
@@ -31,15 +32,16 @@ def _events():
     return torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
 
 
-def load_hf():
+def load_hf(model_id: str | None = None):
     import os
 
     os.environ["HF_HUB_OFFLINE"] = "1"  # weights come from the Volume, never the network
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
+    from kernels import config
     from kernels.e2e.data import model_dir
 
-    path = model_dir()
+    path = model_dir(model_id or config.MODEL_ID)
     tok = AutoTokenizer.from_pretrained(path)
     model = AutoModelForCausalLM.from_pretrained(path, dtype=torch.float16, device_map="cuda")
     model.eval()
@@ -237,8 +239,9 @@ def run(params: dict) -> dict:
         decode_steps, prefill_lens, ppl_windows = 32, [128], 2
 
     t0 = time.time()
-    tok, hf = load_hf()
-    result = {"model": hf.config._name_or_path, "decode_steps": decode_steps, "backends": {}}
+    tok, hf = load_hf(params.get("model"))
+    model_id = params.get("model") or config.MODEL_ID
+    result = {"model": model_id, "decode_steps": decode_steps, "backends": {}}
     ids_ppl = wikitext_ids(tok, ppl_windows * 1024)
     prompt = chat_ids(tok, PROMPTS[0])
 

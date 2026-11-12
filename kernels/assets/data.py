@@ -46,12 +46,14 @@ def bench_rows() -> list[dict]:
     return [v[1] for v in best.values()]
 
 
-def e2e_results() -> dict:
-    """Newest end-to-end result per GPU."""
+def e2e_results(model: str = "Qwen/Qwen2.5-1.5B-Instruct") -> dict:
+    """Newest end-to-end result per GPU for one model. Early results stored the snapshot path
+    (".../models--Qwen--Qwen2.5-1.5B-Instruct/...") instead of the id, so match on the name."""
+    name = model.split("/")[-1]
     out = {}
     for path in sorted(RAW.glob("*.json")):
         for t in _tasks(path):
-            if t.get("task") == "e2e" and t.get("backends"):
+            if t.get("task") == "e2e" and t.get("backends") and name in str(t.get("model", "")):
                 out[_gpu(t)] = {**t, "file": path.name}
     return out
 

@@ -11,22 +11,22 @@ CACHE = Path(os.environ.get("HF_HOME", "/cache/hf")).parent
 WIKITEXT = CACHE / "data" / "wikitext2_test.txt"
 
 
-def model_dir() -> str:
+def model_dir(model_id: str = config.MODEL_ID) -> str:
     """The cached snapshot folder. Read straight from the HF cache layout: GPU containers never
     touch the network, and newer huggingface_hub refuses `local_files_only` on a snapshot that
     was downloaded with allow_patterns (it calls it incomplete)."""
-    repo = CACHE / "hf" / "hub" / ("models--" + config.MODEL_ID.replace("/", "--"))
+    repo = CACHE / "hf" / "hub" / ("models--" + model_id.replace("/", "--"))
     snaps = sorted((repo / "snapshots").glob("*/config.json"), key=lambda p: p.stat().st_mtime)
     if not snaps:
         raise FileNotFoundError(f"no cached snapshot under {repo}; run the download task first")
     return str(snaps[-1].parent)
 
 
-def download_all() -> dict:
+def download_all(model_id: str = config.MODEL_ID) -> dict:
     from datasets import load_dataset
     from huggingface_hub import snapshot_download
 
-    path = snapshot_download(config.MODEL_ID, allow_patterns=["*.json", "*.safetensors", "*.txt"])
+    path = snapshot_download(model_id, allow_patterns=["*.json", "*.safetensors", "*.txt"])
     size = sum(f.stat().st_size for f in Path(path).rglob("*") if f.is_file())
 
     ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
