@@ -8,7 +8,7 @@ returns no result, local wall time is used instead (an over-estimate).
 Estimated cost = GPU rate x 1.15 (CPU and
 memory allowance). Rates: L4 $0.8/h, H100 $3.95/h.
 
-**Totals:** 2.782 GPU-hours, est. $5.59 of $30 (dev $1.22 of $22, H100 50.2 of 90 min).
+**Totals:** 3.006 GPU-hours, est. $5.80 of $30 (dev $1.42 of $22, H100 50.2 of 90 min).
 
 | # | Date | Purpose | GPU | nvidia-smi name | Billed s | Est. $ | Running $ | OK | Note |
 |---|---|---|---|---|---|---|---|---|---|
@@ -24,6 +24,7 @@ memory allowance). Rates: L4 $0.8/h, H100 $3.95/h.
 | 10 | 2026-11-12 00:38 UTC | h100_a preempted first container (estimated) | H100 | NVIDIA H100 80GB HBM3 | 1009 | 1.273 | 4.705 | no | Modal preempted the container mid-sweep; Modal re-ran the input. Estimated from local wall 2374s minus second container 1385s, +20s allowance. Reconcile with billing. |
 | 11 | 2026-11-12 00:48 UTC | multi {'deadline_s': 1560, 'steps': [{'task': 'e2e', 'backends': ['fp16', 'ours' | H100 | NVIDIA H100 80GB HBM3 | 598 | 0.754 | 5.459 | yes | local wall 582s |
 | 12 | 2026-11-12 01:23 UTC | e2e {'model': 'Qwen/Qwen2.5-0.5B-Instruct', 'backends': ['fp16', 'ours', 'ours_c | L4 | NVIDIA L4 | 512 | 0.131 | 5.590 | yes | local wall 1769s |
+| 13 | 2026-11-12 02:43 UTC | multi {'deadline_s': 1500, 'steps': [{'task': 'pytest', 'args': 'tests/test_fp8. | L4 | NVIDIA L4 | 807 | 0.206 | 5.796 | yes | local wall 4542s |
 
 ## Reconciliation with Modal billing
 
