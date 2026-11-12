@@ -410,11 +410,12 @@ def decode_breakdown(e2e: dict):
     fig.legend(handles, labels, loc="upper left", ncol=1, fontsize=9,
                bbox_to_anchor=(0.012, 0.86))
     f, o = rows[0], rows[1] if len(rows) > 1 else rows[0]
-    fig.suptitle(f"Swapped layers got {f[1] / o[1]:.1f}x faster; the untouched {o[2]:.1f} ms "
-                 f"is now {100 * o[2] / (o[1] + o[2]):.0f}% of a token", x=0.012, ha="left",
+    fig.suptitle(f"On L4, swapped layers got {f[1] / o[1]:.1f}x faster; the untouched "
+                 f"{o[2]:.1f} ms is now {100 * o[2] / (o[1] + o[2]):.0f}% of a token", x=0.012,
+                 ha="left",
                  color=TEXT, fontsize=13, fontweight="semibold")
     footnote(fig, "Qwen2.5-1.5B | CUDA graphs | layers timed alone, rest = total minus layers")
-    fig.tight_layout(rect=(0, 0.05, 1, 0.72))
+    fig.tight_layout(rect=(0, 0.05, 1, 0.78))
     return _save(fig, "decode_breakdown")
 
 

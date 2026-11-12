@@ -23,6 +23,10 @@ swapped into Qwen2.5-1.5B.
 <!-- gen:e2e -->
 | GPU | Backend | Decode tok/s (batch 1) | Swapped layers, ms/token | Prefill tok/s (T=2048) | WikiText-2 ppl | Linear weights |
 |---|---|---|---|---|---|---|
+| H100 | fp16 | 283.1 | 2.32 | 108242 | 10.654 | 2.62 GB |
+| H100 | ours | 397.9 | 1.31 | 79706 | 11.900 | 0.70 GB |
+| H100 | ours_cuda | 338.6 | 1.74 | 79961 | 11.900 | 0.70 GB |
+| H100 | w4_ref | - | - | - | 11.901 | 0.70 GB |
 | L4 | fp16 | 59.5 | 11.36 | 12409 | 10.654 | 2.62 GB |
 | L4 | ours | 118.2 | 3.28 | 12346 | 11.900 | 0.70 GB |
 | L4 | ours_cuda | 114.4 | 3.62 | 12262 | 11.900 | 0.70 GB |
@@ -45,10 +49,13 @@ swapped into Qwen2.5-1.5B.
 | 8b_up (14336x4096) | 2048 | L4 | 5025.5 | - | 4472.1 | 28082.2 | 5152.9 | 0.89x | 7% |
 | qwen_gate_up (17920x1536) | 1 | H100 | 12.7 | 18.6 | 23.0 | 16.3 | 21.2 | 1.80x | 34% |
 | qwen_gate_up (17920x1536) | 16 | H100 | 20.4 | 75.8 | 23.8 | 46.6 | 61.7 | 1.16x | 22% |
+| qwen_gate_up (17920x1536) | 2048 | H100 | 345.8 | - | 177.0 | 5034.3 | 219.6 | 0.51x | 8% |
 | qwen_down (1536x8960) | 1 | H100 | 14.7 | 21.4 | 14.4 | 12.4 | 10.8 | 0.98x | 15% |
 | qwen_down (1536x8960) | 16 | H100 | 14.8 | 54.1 | 14.9 | 28.0 | 43.6 | 1.00x | 15% |
+| qwen_down (1536x8960) | 2048 | H100 | 232.9 | - | 83.0 | 2002.5 | 116.6 | 0.36x | 6% |
 | 8b_up (14336x4096) | 1 | H100 | 20.8 | 30.4 | 42.4 | 20.3 | 33.5 | 2.04x | 45% |
 | 8b_up (14336x4096) | 16 | H100 | 33.0 | 135.9 | 43.0 | 69.7 | 126.1 | 1.31x | 29% |
+| 8b_up (14336x4096) | 2048 | H100 | 743.7 | - | 346.5 | 7909.4 | 436.5 | 0.47x | 4% |
 <!-- /gen:w4a16 -->
 
 ### Fused RMSNorm and SwiGLU
@@ -69,13 +76,13 @@ swapped into Qwen2.5-1.5B.
 Times are CUDA-graph medians of 3 sweeps, with enough rotating input copies that every call reads
 from DRAM (working set at least 4x the L2 cache).
 <!-- gen:spread -->
-Median spread between the 3 sweeps: 0.3%. 2 of 658 measurements spread more than 10% (marked in the site tables).
+Median spread between the 3 sweeps: 0.3%. 2 of 748 measurements spread more than 10% (marked in the site tables).
 <!-- /gen:spread -->
 
 ### Cost
 
 <!-- gen:cost -->
-Total GPU time: **2.47 GPU-hours**, estimated **$4.71** (cap $30), of which H100: 40 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
+Total GPU time: **2.64 GPU-hours**, estimated **$5.46** (cap $30), of which H100: 50 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
 <!-- /gen:cost -->
 
 ## Quickstart
