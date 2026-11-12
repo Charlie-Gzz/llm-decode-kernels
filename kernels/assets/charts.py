@@ -148,8 +148,8 @@ def speedup_w4a16(rows, gpu: str):
     for j in range(len(order), nrow * ncol):
         axes[j // ncol][j % ncol].axis("off")
     handles, labels = axes[0][0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=len(labels), bbox_to_anchor=(0.5, 0.875),
-               fontsize=9)
+    fig.legend(handles, labels, loc="upper center", ncol=min(len(labels), 3),
+               bbox_to_anchor=(0.5, 0.885), fontsize=9)
     dmed = statistics.median(decode_speedups) if decode_speedups else 0
     title = f"4-bit Triton matmul is {dmed:.1f}x faster than fp16 cuBLAS at decode (median)"
     if prefill_speedups:
@@ -357,7 +357,8 @@ def decode_tokens(e2e: dict):
         vals = [e2e[g]["backends"].get(key, {}).get("decode", {}).get("tok_s", 0) for g in gpus]
         color = SERIES["fp16"]["color"] if key == "fp16" else SERIES[impl]["color"]
         bars = ax.bar(x - 0.4 + w * (i + 0.5), vals, width=w, color=color, label=label,
-                      edgecolor=ax.get_facecolor(), linewidth=2)
+                      edgecolor=ax.get_facecolor(), linewidth=2,
+                      hatch="///" if key == "ours_fp8" else None)  # same hue as Triton int4
         for b, v in zip(bars, vals):
             if v:
                 ax.text(b.get_x() + b.get_width() / 2, v, f"{v:.0f}", ha="center", va="bottom",

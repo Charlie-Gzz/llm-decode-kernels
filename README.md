@@ -27,6 +27,9 @@ swapped into Qwen2.5-1.5B.
 - **Quality**: WikiText-2 perplexity goes from 10.654 to 11.900. A dequantize-then-cuBLAS
   reference with the same 4-bit weights gives 11.901, so the cost comes from round-to-nearest
   quantization, not from the kernels.
+- **FP8 is the low-risk option** (stretch): FP8 e4m3 weights give 1.54x faster decoding on the
+  L4 with almost no quality cost (perplexity 10.654 to 10.719), against 1.99x and +1.25 for
+  4-bit. The FP8 matmul holds 78-84% of peak from batch 1 to 16.
 - **Model size matters**: on Qwen2.5-0.5B the same kernels give 1.39x (vs 1.99x on 1.5B),
   because the fp16 `lm_head` is a bigger share of each token, and 4-bit RTN costs more quality
   (perplexity 15.8 to 19.1).
@@ -54,6 +57,7 @@ More charts, per-kernel pages, profiler output and the H100 results are on the r
 | L4 | ours | 118.2 | 3.28 | 12346 | 11.900 | 0.70 GB |
 | L4 | ours_cuda | 114.4 | 3.62 | 12262 | 11.900 | 0.70 GB |
 | L4 | w4_ref | - | - | - | 11.901 | 0.70 GB |
+| L4 | ours_fp8 | 91.8 | 5.64 | 12889 | 10.719 | 1.31 GB |
 | H100 | fp16 | 283.1 | 2.32 | 108242 | 10.654 | 2.62 GB |
 | H100 | ours | 397.9 | 1.31 | 79706 | 11.900 | 0.70 GB |
 | H100 | ours_cuda | 338.6 | 1.74 | 79961 | 11.900 | 0.70 GB |
@@ -117,13 +121,13 @@ Times are CUDA-graph medians of 3 sweeps, with enough rotating input and output 
 every call reads from and writes to DRAM (working set at least 4x the L2 cache). Peak numbers
 come from NVIDIA's spec sheets: L4 300 GB/s, H100 SXM 3.35 TB/s.
 <!-- gen:spread -->
-Median spread between the 3 sweeps: 0.3%. 2 of 748 measurements spread more than 10% (marked in the site tables).
+Median spread between the 3 sweeps: 0.3%. 2 of 796 measurements spread more than 10% (marked in the site tables).
 <!-- /gen:spread -->
 
 ### Cost
 
 <!-- gen:cost -->
-Total GPU time: **2.78 GPU-hours**, estimated **$5.59** (cap $30), of which H100: 50 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
+Total GPU time: **3.01 GPU-hours**, estimated **$5.80** (cap $30), of which H100: 50 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
 <!-- /gen:cost -->
 
 ## Quickstart
@@ -178,6 +182,8 @@ flowchart LR
   that factors the scale out of the inner loop (`s * (sum x*q - z * sum x)`), so each weight
   costs 4 instructions instead of 7. Per shape, the wrapper times the paths in a CUDA graph and
   keeps the fastest.
+- **FP8 weight-only matmul** ([kernels/fp8.py](kernels/fp8.py), stretch): e4m3 weights with a
+  per-output-channel scale that factors out of the K sum, same three paths as W4A16.
 - **CUDA C++ decode kernel** ([kernels/cuda/w4a16_decode.cu](kernels/cuda/w4a16_decode.cu)):
   the same math as a hand-written GEMV with 16-byte loads, 4 columns per lane, shared-memory
   reduction and split-K.

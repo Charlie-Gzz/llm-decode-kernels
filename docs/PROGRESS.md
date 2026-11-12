@@ -3,7 +3,7 @@
 ## Status
 - **M0-M8 done.** Final results on L4 and H100 are in `results/raw/`, assets regenerated,
   README, site and handoff written.
-- **GPU spend:** est. $5.46 (2.64 GPU-hours; H100 50 of 90 min). Dev $1.09 of $22, final runs
+- **GPU spend:** est. $5.80 (3.0 GPU-hours; H100 50 of 90 min). Dev $1.42 of $22, final runs
   $4.37 of the $8 reserve. See `docs/GPU_LEDGER.md`.
 
 ## Done
@@ -22,10 +22,12 @@
   DEMO_SCRIPT, SLIDES_OUTLINE, PORTFOLIO_CARD, Pages workflow (manual, not enabled).
 - **M8** README, HANDOFF.
 - Stretch 1 (residual add fused into the next norm) is part of the runner from the start.
+- Stretch 2: Qwen2.5-0.5B end to end on L4 (1.39x decode).
+- Stretch 3: FP8 weight-only matmul, e2e and sweep on L4 (1.54x decode, ppl +0.07).
 
 ## Next step
-- Stretch 2: a second model size (Qwen2.5-3B) end to end on L4, if it fits the budget (~$0.30).
-- Then: final pass (lint, CPU tests, fresh-clone check), ledger reconciliation, cleanup.
+- Waiting on the user's answers in `docs/QUESTIONS.md` (publish, next optimization).
+- Release polish (description, topics) only after the user says the repo is ready to share.
 
 ## Restart checklist
 1. `python -m modal app list` and stop anything running (`modal app stop -y <id>`).

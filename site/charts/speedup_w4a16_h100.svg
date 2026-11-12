@@ -4951,17 +4951,17 @@ z
   </g>
   <g id="legend_1">
    <g id="line2d_169">
-    <path d="M 30.786328 68.56875 
-L 39.786328 68.56875 
-L 48.786328 68.56875 
+    <path d="M 126.501328 64.17675 
+L 135.501328 64.17675 
+L 144.501328 64.17675 
 " style="fill: none; stroke: #a3e635; stroke-width: 2; stroke-linecap: square"/>
     <g>
-     <use xlink:href="#m3d808c123c" x="39.786328" y="68.56875" style="fill: #a3e635; stroke: #131a26; stroke-width: 1.5"/>
+     <use xlink:href="#m3d808c123c" x="135.501328" y="64.17675" style="fill: #a3e635; stroke: #131a26; stroke-width: 1.5"/>
     </g>
    </g>
    <g id="text_68">
     <!-- Ours (Triton) -->
-    <g style="fill: #e5e7eb" transform="translate(55.986328 71.71875) scale(0.09 -0.09)">
+    <g style="fill: #e5e7eb" transform="translate(151.701328 67.32675) scale(0.09 -0.09)">
      <defs>
       <path id="Inter-Regular-141" d="M 2450 -63 
 Q 1853 -63 1386 226 
@@ -5086,17 +5086,17 @@ z
     </g>
    </g>
    <g id="line2d_170">
-    <path d="M 127.951172 68.56875 
-L 136.951172 68.56875 
-L 145.951172 68.56875 
+    <path d="M 126.501328 79.566398 
+L 135.501328 79.566398 
+L 144.501328 79.566398 
 " style="fill: none; stroke: #38bdf8; stroke-width: 2; stroke-linecap: square"/>
     <g>
-     <use xlink:href="#m145fea41af" x="136.951172" y="68.56875" style="fill: #38bdf8; stroke: #131a26; stroke-width: 1.5; stroke-linejoin: miter"/>
+     <use xlink:href="#m145fea41af" x="135.501328" y="79.566398" style="fill: #38bdf8; stroke: #131a26; stroke-width: 1.5; stroke-linejoin: miter"/>
     </g>
    </g>
    <g id="text_69">
     <!-- Ours (CUDA C++) -->
-    <g style="fill: #e5e7eb" transform="translate(153.151172 71.71875) scale(0.09 -0.09)">
+    <g style="fill: #e5e7eb" transform="translate(151.701328 82.716398) scale(0.09 -0.09)">
      <defs>
       <path id="Inter-Regular-49" d="M 2447 -63 
 Q 1850 -63 1383 226 
@@ -5223,17 +5223,17 @@ z
     </g>
    </g>
    <g id="line2d_171">
-    <path d="M 247.271484 68.56875 
-L 256.271484 68.56875 
-L 265.271484 68.56875 
+    <path d="M 245.821641 64.17675 
+L 254.821641 64.17675 
+L 263.821641 64.17675 
 " style="fill: none; stroke-dasharray: 12.8,3.2,2,3.2; stroke-dashoffset: 0; stroke: #f59e0b; stroke-width: 2"/>
     <g>
-     <use xlink:href="#mbf80aeae4b" x="256.271484" y="68.56875" style="fill: #f59e0b; stroke: #131a26; stroke-width: 1.5; stroke-linejoin: miter"/>
+     <use xlink:href="#mbf80aeae4b" x="254.821641" y="64.17675" style="fill: #f59e0b; stroke: #131a26; stroke-width: 1.5; stroke-linejoin: miter"/>
     </g>
    </g>
    <g id="text_70">
     <!-- torchao int4 -->
-    <g style="fill: #e5e7eb" transform="translate(272.471484 71.71875) scale(0.09 -0.09)">
+    <g style="fill: #e5e7eb" transform="translate(271.021641 67.32675) scale(0.09 -0.09)">
      <use xlink:href="#Inter-Regular-379"/>
      <use xlink:href="#Inter-Regular-316" transform="translate(31.75 0)"/>
      <use xlink:href="#Inter-Regular-354" transform="translate(91.71875 0)"/>
@@ -5249,17 +5249,17 @@ L 265.271484 68.56875
     </g>
    </g>
    <g id="line2d_172">
-    <path d="M 341.536641 68.56875 
-L 350.536641 68.56875 
-L 359.536641 68.56875 
+    <path d="M 245.821641 79.566398 
+L 254.821641 79.566398 
+L 263.821641 79.566398 
 " style="fill: none; stroke-dasharray: 7.4,3.2; stroke-dashoffset: 0; stroke: #a78bfa; stroke-width: 2"/>
     <g>
-     <use xlink:href="#m65f83cc6fc" x="350.536641" y="68.56875" style="fill: #a78bfa; stroke: #131a26; stroke-width: 1.5; stroke-linejoin: miter"/>
+     <use xlink:href="#m65f83cc6fc" x="254.821641" y="79.566398" style="fill: #a78bfa; stroke: #131a26; stroke-width: 1.5; stroke-linejoin: miter"/>
     </g>
    </g>
    <g id="text_71">
     <!-- torch.compile -->
-    <g style="fill: #e5e7eb" transform="translate(366.736641 71.71875) scale(0.09 -0.09)">
+    <g style="fill: #e5e7eb" transform="translate(271.021641 82.716398) scale(0.09 -0.09)">
      <defs>
       <path id="Inter-Regular-5de" d="M 922 -41 
 Q 747 -41 623 82 
@@ -5327,17 +5327,17 @@ z
     </g>
    </g>
    <g id="line2d_173">
-    <path d="M 442.824609 68.56875 
-L 451.824609 68.56875 
-L 460.824609 68.56875 
+    <path d="M 347.109609 64.17675 
+L 356.109609 64.17675 
+L 365.109609 64.17675 
 " style="fill: none; stroke-dasharray: 2,3.3; stroke-dashoffset: 0; stroke: #6b7280; stroke-width: 2"/>
     <g>
-     <use xlink:href="#med326e36d7" x="451.824609" y="68.56875" style="fill: #6b7280; stroke: #131a26; stroke-width: 1.5"/>
+     <use xlink:href="#med326e36d7" x="356.109609" y="64.17675" style="fill: #6b7280; stroke: #131a26; stroke-width: 1.5"/>
     </g>
    </g>
    <g id="text_72">
     <!-- dequant + matmul -->
-    <g style="fill: #e5e7eb" transform="translate(468.024609 71.71875) scale(0.09 -0.09)">
+    <g style="fill: #e5e7eb" transform="translate(372.309609 67.32675) scale(0.09 -0.09)">
      <defs>
       <path id="Inter-Regular-351" d="M 3425 -1306 
 L 2863 -1306 

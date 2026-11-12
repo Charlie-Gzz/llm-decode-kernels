@@ -36,8 +36,9 @@ Full benchmark reproduction: `runs/README.md`.
 WikiText-2 perplexity 10.654 (fp16) -> 11.900 (4-bit RTN); the dequantize-then-cuBLAS reference
 gives 11.901, so the kernels add no error.
 
-**GPU time and spend:** 2.64 GPU-hours, estimated $5.46 of the $30 cap (dev $1.09 of $22; final
-runs $4.37 of the $8 reserve; H100 50 of 90 minutes). No cap was hit. Ledger:
+**GPU time and spend:** 3.0 GPU-hours, estimated $5.80 of the $30 cap (dev $1.42 of $22; final
+runs $4.37 of the $8 reserve; H100 50 of 90 minutes). No cap was hit. Modal's own billing
+report is lower than the ledger (the ledger rounds up). Ledger:
 `docs/GPU_LEDGER.md`, reconciled against `modal billing report`.
 
 ## Where things are
@@ -64,9 +65,12 @@ runs $4.37 of the $8 reserve; H100 50 of 90 minutes). No cap was hit. Ledger:
   checkpoint. The preempted container's time (about 990 s) is in the ledger as an estimate.
 - **Nsight Compute** runs with `--clock-control none` (Modal cannot lock clocks), so its numbers
   are at boost clocks and higher than sustained ones; both are reported.
-- **Stretch items:** (1) residual fused into the next norm: done. (2) second model size:
-  Qwen2.5-0.5B (see README); 7B did not fit the L4 with this runner and 3B has a non-commercial
-  license. (3) FP8 matmul: not done.
+- **Stretch items** (all L4 only, the single H100 session was already used):
+  (1) residual fused into the next norm: done in the runner.
+  (2) second model size: Qwen2.5-0.5B, 1.39x decode (vs 1.99x on 1.5B), ppl 15.79 to 19.09.
+  7B did not fit the L4 with this runner and 3B has a non-commercial license.
+  (3) FP8 weight-only matmul: 1.54x decode on 1.5B with ppl 10.654 to 10.719; 78-84% of peak
+  from batch 1 to 16.
 - **Fresh-clone check** covered the CPU path (install, lint, CPU tests, asset rebuild); the GPU
   quickstart step was not repeated because it costs money and the same commands ran many times.
 - **L4 capacity:** many L4 requests queued 15 to 70 minutes (not billed). Work was batched to cope.
