@@ -95,12 +95,34 @@ class OursBackend(Backend):
         return swiglu_fused(gate_up)
 
 
+class OursFP8Backend(OursBackend):
+    """Stretch: FP8 (e4m3) weight-only linears, same fused norm and activation kernels."""
+
+    name = "ours_fp8"
+
+    def __init__(self):
+        super().__init__("triton")
+        self.name = "ours_fp8"
+
+    def quantize(self, w, b) -> Linear:
+        from kernels.fp8 import quantize_fp8
+
+        wq, s = quantize_fp8(w)
+        return Linear(qweight=wq, scales=s, bias=b)
+
+    def linear(self, x, p: Linear):
+        from kernels.fp8 import w8a16_matmul
+
+        return w8a16_matmul(x, p.qweight, p.scales, bias=p.bias)
+
+
 def make_backend(name: str) -> Backend:
     return {
         "fp16": Backend,
         "w4_ref": W4RefBackend,
         "ours": lambda: OursBackend("triton"),
         "ours_cuda": lambda: OursBackend("cuda"),
+        "ours_fp8": OursFP8Backend,
     }[name]()
 
 
@@ -140,6 +162,8 @@ class QwenRunner:
                 b = torch.cat([mm.bias.data for mm in mods], 0)
             if not backend.quantized:
                 return Linear(w=w, bias=b)
+            if hasattr(backend, "quantize"):  # formats other than int4 RTN (FP8)
+                return backend.quantize(w, b)
             from kernels.quant import quantize_rtn
 
             qw, s, z = quantize_rtn(w, config.GROUP_SIZE)

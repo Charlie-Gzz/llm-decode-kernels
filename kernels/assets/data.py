@@ -51,10 +51,21 @@ def e2e_results(model: str = "Qwen/Qwen2.5-1.5B-Instruct") -> dict:
     (".../models--Qwen--Qwen2.5-1.5B-Instruct/...") instead of the id, so match on the name."""
     name = model.split("/")[-1]
     out = {}
+    stretch = {}
     for path in sorted(RAW.glob("*.json")):
         for t in _tasks(path):
-            if t.get("task") == "e2e" and t.get("backends") and name in str(t.get("model", "")):
-                out[_gpu(t)] = {**t, "file": path.name}
+            if t.get("task") != "e2e" or not t.get("backends") or name not in str(t.get("model")):
+                continue
+            if t.get("params", {}).get("tag") == "stretch":
+                # stretch runs only contribute their own backend (FP8), never replace the finals
+                for b, r in t["backends"].items():
+                    if b.startswith("ours_fp8"):
+                        stretch.setdefault(_gpu(t), {})[b] = r
+                continue
+            out[_gpu(t)] = {**t, "file": path.name, "backends": dict(t["backends"])}
+    for gpu, backends in stretch.items():
+        if gpu in out:
+            out[gpu]["backends"].update(backends)
     return out
 
 

@@ -126,7 +126,7 @@ def speedup_w4a16(rows, gpu: str):
         ax = axes[i // ncol][i % ncol]
         ls = data.select(sel, layer=layer)
         xs = sorted({r["shape"]["M"] for r in ls})
-        for impl in ("triton", "cuda", "torchao", "compile", "naive"):
+        for impl in ("triton", "fp8", "cuda", "torchao", "compile", "naive"):
             pts = []
             for x in xs:
                 b, r = data.one(ls, impl="fp16", M=x), data.one(ls, impl=impl, M=x)
@@ -341,7 +341,7 @@ def triton_vs_cuda(rows, gpu: str):
 # ----------------------------------------------------------------------------- end to end
 def decode_tokens(e2e: dict):
     names = [("fp16", "fp16", "fp16"), ("ours", "triton", "Ours (Triton)"),
-             ("ours_cuda", "cuda", "Ours (CUDA)")]
+             ("ours_cuda", "cuda", "Ours (CUDA)"), ("ours_fp8", "fp8", "Ours (FP8, stretch)")]
     gpus = [g for g in ("L4", "H100") if g in e2e]
     if not gpus:
         return []

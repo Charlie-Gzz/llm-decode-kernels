@@ -155,9 +155,12 @@ def cases_w4a16(quick: bool, phase: str = "all"):
     except Exception as e:  # not built yet, or failed to build: reported, not hidden
         print(f"[sweep] CUDA kernel unavailable: {e!r}")
 
+    from kernels.fp8 import fp8_bytes, quantize_fp8, w8a16_matmul
+
     for label, N, K in shapes:
         w16 = (torch.randn(N, K, device="cuda") * 0.02).half()
         qw, s, z = quantize_rtn(w16, config.GROUP_SIZE)
+        f8 = quantize_fp8(w16)
         ao = None
         for M in Ms:
             shape = {"layer": label, "M": M, "N": N, "K": K}
@@ -179,6 +182,14 @@ def cases_w4a16(quick: bool, phase: str = "all"):
 
             yield Case("w4a16", "fp16", shape, fn=F.linear, make=make_fp16,
                        bytes=act + N * K * 2, flops=flops, note="cuBLAS fp16, 4x the weight bytes")
+
+            def make_f8(M=M, K=K, wq=f8[0], s8=f8[1]):
+                return (torch.randn(M, K, device="cuda", dtype=torch.half), wq.clone(),
+                        s8.clone())
+
+            yield Case("w4a16", "fp8", shape, fn=lambda x, wq, s8: w8a16_matmul(x, wq, s8),
+                       make=make_f8, bytes=act + fp8_bytes(N, K), flops=flops,
+                       note="stretch: FP8 e4m3 weights, per-channel scale")
 
             try:
                 ao = ao or _torchao_linear(w16)

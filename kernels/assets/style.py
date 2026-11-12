@@ -25,6 +25,7 @@ SERIES = {
     "fp16": {"color": "#9CA3AF", "label": "fp16 cuBLAS", "marker": "D", "ls": ":"},
     "torchao": {"color": "#F59E0B", "label": "torchao int4", "marker": "v", "ls": "-."},
     "naive": {"color": "#6B7280", "label": "dequant + matmul", "marker": "x", "ls": ":"},
+    "fp8": {"color": "#A3E635", "label": "Ours (Triton FP8)", "marker": "P", "ls": (0, (6, 2))},
 }
 
 
