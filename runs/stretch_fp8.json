@@ -1,0 +1,5 @@
+{"deadline_s": 1500, "steps": [
+ {"task": "pytest", "args": "tests/test_fp8.py"},
+ {"task": "e2e", "backends": ["ours_fp8"], "tag": "stretch"},
+ {"task": "bench", "run_id": "stretch-fp8", "kernels": ["w4a16"], "impls": ["fp8"], "sweeps": 3}
+]}

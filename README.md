@@ -27,6 +27,9 @@ swapped into Qwen2.5-1.5B.
 - **Quality**: WikiText-2 perplexity goes from 10.654 to 11.900. A dequantize-then-cuBLAS
   reference with the same 4-bit weights gives 11.901, so the cost comes from round-to-nearest
   quantization, not from the kernels.
+- **Model size matters**: on Qwen2.5-0.5B the same kernels give 1.39x (vs 1.99x on 1.5B),
+  because the fp16 `lm_head` is a bigger share of each token, and 4-bit RTN costs more quality
+  (perplexity 15.8 to 19.1).
 - **Triton vs CUDA C++**: the Triton kernel ended up faster at every shape (77% vs 70% of peak at
   batch 1 on the L4, 62% vs 29% at batch 16). Details in
   [docs/TRITON_VS_CUDA.md](docs/TRITON_VS_CUDA.md).
