@@ -27,7 +27,8 @@
 
 ## Next step
 - Waiting on the user's answers in `docs/QUESTIONS.md` (publish, next optimization).
-- Release polish (description, topics) only after the user says the repo is ready to share.
+- GitHub description and 15 topics set (2026-11-11, at the user's request), from PLAN.md
+  section 8 plus the L4 headline number. Repo is still private.
 
 ## Restart checklist
 1. `python -m modal app list` and stop anything running (`modal app stop -y <id>`).
