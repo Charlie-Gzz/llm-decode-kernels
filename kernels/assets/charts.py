@@ -216,6 +216,8 @@ def roofline(rows, gpu: str):
                 peak / 1e12), xytext=(0, 6), textcoords="offset points", color=MUTED, fontsize=9)
     best = None
     for label, impl, r, flops in pts:
+        if impl == "cuda":  # sits on top of the Triton point; compared in its own chart
+            continue
         intensity = flops / r["bytes"]
         tflops = flops / (r["ms"] * 1e-3) / 1e12
         s = SERIES[impl]
@@ -223,8 +225,12 @@ def roofline(rows, gpu: str):
         ax.scatter([intensity], [tflops], s=70, marker=s["marker"],
                    facecolors="none" if hollow else s["color"], edgecolors=s["color"],
                    linewidths=1.6, zorder=3)
-        ax.annotate(label, (intensity, tflops), xytext=(7, -3), textcoords="offset points",
-                    color=TEXT if not hollow else MUTED, fontsize=9)
+        # fp16 reference points get their label on the left so they do not collide with ours
+        offset, ha = ((-8, -12), "right") if hollow else ((7, -3), "left")
+        if label == "fp16 M=1":
+            offset = (-8, 6)
+        ax.annotate(label, (intensity, tflops), xytext=offset, textcoords="offset points",
+                    color=TEXT if not hollow else MUTED, fontsize=9, ha=ha)
         if label == "W4A16 M=1":
             best = 100 * (r["bytes"] / (r["ms"] * 1e-3)) / bw
     ax.set_xscale("log")
@@ -232,12 +238,17 @@ def roofline(rows, gpu: str):
     ax.set_xlabel("arithmetic intensity (FLOP per byte of DRAM traffic)")
     ax.set_ylabel("achieved TFLOPS")
     ax.set_xlim(0.1, 1e4)
-    title = f"Every decode kernel sits under the {gpu}'s memory roof"
-    if best:
-        title += f"\nW4A16 at batch 1 reaches {best:.0f}% of peak bandwidth"
+    if best and best >= 60:
+        title = (f"Decode kernels run close to the {gpu}'s memory roof\n"
+                 f"W4A16 at batch 1 reaches {best:.0f}% of peak bandwidth")
+    elif best:
+        title = (f"On the {gpu}, the 4-bit matmul falls well short of the memory roof\n"
+                 f"W4A16 at batch 1: {best:.0f}% of peak (unpacking, not memory, limits it)")
+    else:
+        title = f"Decode kernels against the {gpu}'s roofline"
     ax.set_title(title, fontsize=13)
     footnote(fig, f"{gpu} | fp16 | filled = ours, hollow = fp16 cuBLAS | matmul 17920x1536 "
-                  "(Qwen gate_up) | elementwise FLOPs approximate")
+                  "(Qwen gate_up)")
     fig.tight_layout(rect=(0, 0.04, 1, 1))
     return _save(fig, f"roofline_{gpu.lower()}")
 

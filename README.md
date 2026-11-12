@@ -43,6 +43,12 @@ swapped into Qwen2.5-1.5B.
 | 8b_up (14336x4096) | 1 | L4 | 123.9 | 131.7 | 429.9 | 123.3 | 144.2 | 3.47x | 84% |
 | 8b_up (14336x4096) | 16 | L4 | 160.9 | 313.9 | 464.4 | 282.4 | 1152.5 | 2.89x | 66% |
 | 8b_up (14336x4096) | 2048 | L4 | 5025.5 | - | 4472.1 | 28082.2 | 5152.9 | 0.89x | 7% |
+| qwen_gate_up (17920x1536) | 1 | H100 | 12.7 | 18.6 | 23.0 | 16.3 | 21.2 | 1.80x | 34% |
+| qwen_gate_up (17920x1536) | 16 | H100 | 20.4 | 75.8 | 23.8 | 46.6 | 61.7 | 1.16x | 22% |
+| qwen_down (1536x8960) | 1 | H100 | 14.7 | 21.4 | 14.4 | 12.4 | 10.8 | 0.98x | 15% |
+| qwen_down (1536x8960) | 16 | H100 | 14.8 | 54.1 | 14.9 | 28.0 | 43.6 | 1.00x | 15% |
+| 8b_up (14336x4096) | 1 | H100 | 20.8 | 30.4 | 42.4 | 20.3 | 33.5 | 2.04x | 45% |
+| 8b_up (14336x4096) | 16 | H100 | 33.0 | 135.9 | 43.0 | 69.7 | 126.1 | 1.31x | 29% |
 <!-- /gen:w4a16 -->
 
 ### Fused RMSNorm and SwiGLU
@@ -54,18 +60,22 @@ swapped into Qwen2.5-1.5B.
 | RMSNorm + residual | N=1536, M=1 | L4 | 1.3 | 10.2 | 1.3 | 7.80x | 4% |
 | SwiGLU | I=8960, M=4096 | L4 | 932.4 | 1559.0 | 879.3 | 1.67x | 79% |
 | SwiGLU | I=8960, M=1 | L4 | 1.1 | 2.7 | 1.0 | 2.46x | 16% |
+| RMSNorm + residual | N=4096, M=16384 | H100 | 180.5 | 1075.6 | 183.2 | 5.96x | 89% |
+| RMSNorm + residual | N=1536, M=1 | H100 | 1.5 | 12.7 | 1.4 | 8.69x | 0% |
+| SwiGLU | I=8960, M=4096 | H100 | 77.5 | 209.6 | 74.7 | 2.70x | 85% |
+| SwiGLU | I=8960, M=1 | H100 | 1.5 | 3.7 | 1.3 | 2.43x | 1% |
 <!-- /gen:kernels -->
 
 Times are CUDA-graph medians of 3 sweeps, with enough rotating input copies that every call reads
 from DRAM (working set at least 4x the L2 cache).
 <!-- gen:spread -->
-Median spread between the 3 sweeps: 0.3%. 0 of 375 measurements spread more than 10% (marked in the site tables).
+Median spread between the 3 sweeps: 0.3%. 2 of 658 measurements spread more than 10% (marked in the site tables).
 <!-- /gen:spread -->
 
 ### Cost
 
 <!-- gen:cost -->
-Total GPU time: **1.80 GPU-hours**, estimated **$1.66** (cap $30), of which H100: 0 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
+Total GPU time: **2.47 GPU-hours**, estimated **$4.71** (cap $30), of which H100: 40 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
 <!-- /gen:cost -->
 
 ## Quickstart
