@@ -146,6 +146,12 @@ def reconcile() -> str:
         f" ({parts})\n"
         f"- Ledger estimate: **${t['usd']:.4f}**\n"
     )
+    rows_l = load()
+    for gpu in ("L4", "H100"):
+        if gpu in by_resource:
+            billed = by_resource[gpu] / config.GPU_USD_PER_HOUR[gpu] * 3600
+            mine = sum(r["billed_s"] for r in rows_l if r["gpu"] == gpu)
+            text += f"- {gpu} seconds: Modal billed **{billed:.0f} s**, ledger has {mine:.0f} s\n"
     (ROOT / "docs" / "ledger_reconciliation.md").write_text(text, newline="\n")
     render()
     return text
