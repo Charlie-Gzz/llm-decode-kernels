@@ -264,7 +264,7 @@ def run(params: dict) -> dict:
         gc.collect()
         torch.cuda.empty_cache()
 
-    if "ours" in backends:
+    if any(b in ("ours", "ours_lm") for b in backends):
         from kernels.w4a16 import best_configs
 
         result["triton_configs"] = best_configs()
@@ -301,7 +301,7 @@ def _run_backend(name, hf, tok, prompt, ids_ppl, hf_logits, hf_gen, decode_steps
             r["parity_first_divergence"] = first
             r["parity_compared_tokens"] = n
             r["parity_tokens"] = {"runner": toks[:n], "hf": ref[:n]}
-        if name != "w4_ref":  # w4_ref is for quality only
+        if not name.startswith("w4_ref"):  # w4_ref (and w4_ref_lm) are for quality only
             r["decode"] = decode_speed(runner, prompt, decode_steps)
             r["prefill"] = [prefill_speed(runner, T) for T in prefill_lens]
             r["layers_only_ms"] = layers_only_ms(runner)

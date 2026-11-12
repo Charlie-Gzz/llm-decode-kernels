@@ -6,7 +6,9 @@ has its own static KV cache, RoPE and SDPA call. fp16 and 4-bit use the *same* r
 fusions (fused qkv and gate/up projections); only the linear/norm/activation ops differ.
 The fp16 runner is checked against HF's own model (logits and greedy tokens) in kernels/e2e/run.py.
 
-Kept in fp16 on every backend: embeddings, lm_head (tied), attention (SDPA), RoPE.
+Kept in fp16 on every backend: embeddings, attention (SDPA), RoPE. lm_head (tied to the
+embeddings) stays fp16 too, except on the `_lm` backends (e.g. `ours_lm`), which also quantize a
+copy of it; the embedding lookup keeps the fp16 table.
 """
 
 from __future__ import annotations
@@ -117,13 +119,21 @@ class OursFP8Backend(OursBackend):
 
 
 def make_backend(name: str) -> Backend:
-    return {
+    """`<name>_lm` = the quantized backend `<name>` with lm_head quantized as well."""
+    base, quant_lm_head = (name[:-3], True) if name.endswith("_lm") else (name, False)
+    be = {
         "fp16": Backend,
         "w4_ref": W4RefBackend,
         "ours": lambda: OursBackend("triton"),
         "ours_cuda": lambda: OursBackend("cuda"),
         "ours_fp8": OursFP8Backend,
-    }[name]()
+    }[base]()
+    if quant_lm_head:
+        if not be.quantized:
+            raise ValueError(f"{name}: only quantized backends can quantize lm_head")
+        be.name = name
+    be.quant_lm_head = quant_lm_head
+    return be
 
 
 # ------------------------------------------------------------------------------------- model
@@ -169,6 +179,8 @@ class QwenRunner:
             qw, s, z = quantize_rtn(w, config.GROUP_SIZE)
             return Linear(qweight=qw, scales=s, zeros=z, bias=b)
 
+        # Optional quantized copy of lm_head (the fp16 table stays for the embedding lookup).
+        self.head_q = lin(hf_model.lm_head) if getattr(backend, "quant_lm_head", False) else None
         self.layers = []
         for layer in m.layers:
             a, mlp = layer.self_attn, layer.mlp
@@ -186,15 +198,15 @@ class QwenRunner:
         def nbytes(t):
             return 0 if t is None else t.numel() * t.element_size()
 
-        layers = 0
-        for L in self.layers:
-            for p in (L.qkv, L.o, L.gate_up, L.down):
-                if self.backend.quantized:
-                    layers += nbytes(p.qweight) + nbytes(p.scales) + nbytes(p.zeros)
-                else:
-                    layers += nbytes(p.w)
-                layers += nbytes(p.bias)
-        return {"linear_layers": layers, "embed": nbytes(self.embed),
+        def size(p: Linear):
+            if self.backend.quantized:
+                return nbytes(p.qweight) + nbytes(p.scales) + nbytes(p.zeros) + nbytes(p.bias)
+            return nbytes(p.w) + nbytes(p.bias)
+
+        layers = sum(size(p) for L in self.layers for p in (L.qkv, L.o, L.gate_up, L.down))
+        head = size(self.head_q) if self.head_q is not None else nbytes(self.lm_head)
+        return {"linear_layers": layers, "embed": nbytes(self.embed), "lm_head_read": head,
+                "lm_head_quantized": self.head_q is not None,
                 "lm_head_shared_with_embed": self.lm_head.data_ptr() == self.embed.data_ptr()}
 
     def _rope(self, x, cos, sin):
@@ -236,4 +248,6 @@ class QwenRunner:
         h, _ = be.norm(h, self.final_norm, eps, residual=residual)
         if not all_logits:
             h = h[:, -1:]
+        if self.head_q is not None:
+            return be.linear(h, self.head_q)
         return F.linear(h, self.lm_head)

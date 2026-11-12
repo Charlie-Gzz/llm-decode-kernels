@@ -1,0 +1,4 @@
+{"deadline_s": 1500, "steps": [
+ {"task": "pytest", "args": "tests/test_runner.py"},
+ {"task": "e2e", "backends": ["fp16", "ours", "ours_lm", "w4_ref_lm", "ours_fp8_lm"], "tag": "followup"}
+]}
