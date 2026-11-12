@@ -320,6 +320,20 @@ def page_e2e(e2e):
              '(SDPA) and RoPE stay in fp16 on both sides. Both sides run the same small runner '
              'under CUDA graphs with a static KV cache, so the only difference is the kernels.</p>')
     body += section("Decode speed", chart("decode_tokens", "decode tokens/s"))
+    size_rows = []
+    for m in ("Qwen/Qwen2.5-0.5B-Instruct", "Qwen/Qwen2.5-1.5B-Instruct"):
+        res = data.e2e_results(m).get("L4")
+        if res and "ours" in res["backends"]:
+            f, o = res["backends"]["fp16"], res["backends"]["ours"]
+            size_rows.append([esc(m.split("/")[-1]), f"{f['decode']['tok_s']:.1f}",
+                              f"{o['decode']['tok_s']:.1f}",
+                              f"{o['decode']['tok_s'] / f['decode']['tok_s']:.2f}x",
+                              f"{f['ppl']:.2f}", f"{o['ppl']:.2f}"])
+    if len(size_rows) > 1:
+        body += section("Model size (L4)", table(
+            ["model", "fp16 tok/s", "ours tok/s", "speedup", "fp16 ppl", "4-bit ppl"], size_rows),
+            "On the smaller model the fp16 lm_head is a bigger share of each token, so the same "
+            "kernels help less, and round-to-nearest 4-bit costs more quality.")
     body += section("Where a decode token's time goes", chart("decode_breakdown", "breakdown"),
                     "The swapped layers are timed alone in their own CUDA graph; the rest is the "
                     "full step minus that. The fp16 lm_head (151936 x 1536) alone reads 0.47 GB "

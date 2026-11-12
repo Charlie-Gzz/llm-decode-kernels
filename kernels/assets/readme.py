@@ -90,6 +90,27 @@ def e2e_table(e2e) -> str:
     return "\n".join(lines)
 
 
+MODELS = ["Qwen/Qwen2.5-0.5B-Instruct", "Qwen/Qwen2.5-1.5B-Instruct"]
+
+
+def sizes_table() -> str:
+    """Decode speedup vs model size on L4: the bigger the share of linear-layer bytes per token,
+    the more the 4-bit kernels help."""
+    lines = ["| Model (L4, batch 1) | fp16 tok/s | ours tok/s | Speedup | Swapped layers speedup | "
+             "fp16 ppl | 4-bit ppl |", "|---|---|---|---|---|---|---|"]
+    for m in MODELS:
+        res = data.e2e_results(m).get("L4")
+        if not res or "ours" not in res["backends"]:
+            continue
+        f, o = res["backends"]["fp16"], res["backends"]["ours"]
+        lines.append(f"| {m.split('/')[-1]} | {f['decode']['tok_s']:.1f} | "
+                     f"{o['decode']['tok_s']:.1f} | "
+                     f"{o['decode']['tok_s'] / f['decode']['tok_s']:.2f}x | "
+                     f"{f['layers_only_ms'] / o['layers_only_ms']:.1f}x | {f['ppl']:.2f} | "
+                     f"{o['ppl']:.2f} |")
+    return "\n".join(lines)
+
+
 def cost() -> str:
     t = ledger.totals()
     return (f"Total GPU time: **{t['gpu_hours']:.2f} GPU-hours**, estimated **${t['usd']:.2f}** "
@@ -111,6 +132,7 @@ def build() -> str:
     rows, e2e = data.bench_rows(), data.e2e_results()
     blocks = {"headline": headline(rows, e2e), "kernels": kernel_table(rows),
               "w4a16": w4_table(rows), "e2e": e2e_table(e2e), "cost": cost(),
+              "sizes": sizes_table(),
               "spread": spread_note(rows)}
     text = README.read_text(encoding="utf-8")
     for name, body in blocks.items():

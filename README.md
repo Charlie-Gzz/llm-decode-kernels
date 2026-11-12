@@ -57,6 +57,19 @@ More charts, per-kernel pages, profiler output and the H100 results are on the r
 | H100 | w4_ref | - | - | - | 11.901 | 0.70 GB |
 <!-- /gen:e2e -->
 
+### Model size
+
+The end-to-end gain depends on how much of each token's reads are the swapped layers. On a
+smaller model the fp16 `lm_head` is a bigger share, so the same kernels help less, and 4-bit
+round-to-nearest costs more quality.
+
+<!-- gen:sizes -->
+| Model (L4, batch 1) | fp16 tok/s | ours tok/s | Speedup | Swapped layers speedup | fp16 ppl | 4-bit ppl |
+|---|---|---|---|---|---|---|
+| Qwen2.5-0.5B-Instruct | 128.4 | 178.8 | 1.39x | 3.0x | 15.79 | 19.09 |
+| Qwen2.5-1.5B-Instruct | 59.5 | 118.2 | 1.99x | 3.5x | 10.65 | 11.90 |
+<!-- /gen:sizes -->
+
 ### 4-bit matmul (W4A16)
 
 <!-- gen:w4a16 -->
@@ -107,7 +120,7 @@ Median spread between the 3 sweeps: 0.3%. 2 of 748 measurements spread more than
 ### Cost
 
 <!-- gen:cost -->
-Total GPU time: **2.64 GPU-hours**, estimated **$5.46** (cap $30), of which H100: 50 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
+Total GPU time: **2.78 GPU-hours**, estimated **$5.59** (cap $30), of which H100: 50 min. Every run is in [docs/GPU_LEDGER.md](docs/GPU_LEDGER.md).
 <!-- /gen:cost -->
 
 ## Quickstart
