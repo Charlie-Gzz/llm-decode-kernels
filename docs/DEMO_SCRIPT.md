@@ -17,13 +17,13 @@ prefill sizes it is compute-bound and cuBLAS wins, and the chart says so. Every 
 CUDA-graph median of three sweeps, with inputs rotated so nothing hides in cache."
 
 **1:05-1:25 · Triton vs CUDA.** Open the Triton vs CUDA chart. "I also wrote the decode case in
-CUDA C++. It is about 10% faster at batch 1 and twice as slow at batch 16, because it runs on CUDA
-cores. Triton gets most of the speed for a fraction of the effort."
+CUDA C++. With the same math, Triton ended up faster everywhere: 77% vs 70% of peak at batch 1,
+and twice as fast at batch 16, where my CUDA kernel runs on CUDA cores instead of tensor cores."
 
 **1:25-1:50 · The real model.** Open the end-to-end page. "Swapped into Qwen2.5-1.5B, decoding
-goes from fp16 to the 4-bit kernels at the speeds shown here. Perplexity rises a bit, and the
-dequantize-then-matmul reference gives the same number, so that cost belongs to round-to-nearest
-quantization, not to the kernels."
+goes from 60 to 118 tokens per second on an L4, and from 283 to 398 on an H100. Perplexity rises
+from 10.65 to 11.90, and the dequantize-then-matmul reference gives the same number, so that cost
+belongs to round-to-nearest quantization, not to the kernels."
 
 **1:50-2:00 · Cost.** Open the cost page. "Everything ran on Modal with a spend ledger and hard
-caps. The whole project cost a few dollars of GPU time."
+caps. The whole project cost about five and a half dollars of GPU time."
