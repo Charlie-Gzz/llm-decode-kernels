@@ -3,8 +3,8 @@
 Audience: engineers and hiring managers who know what an LLM is but not GPU internals.
 
 1. **Decoding an LLM is a memory problem.** At batch 1, every new token reads every weight once.
-   On an L4 (300 GB/s), fp16 Qwen2.5-1.5B moves ~3.1 GB per token, so ~60 tokens/s is the ceiling
-   no matter how fast the math is. Visual: roofline with fp16 at batch 1 pinned to the memory roof.
+   On an L4 (300 GB/s), fp16 Qwen2.5-1.5B reads ~3.1 GB per token: even at full spec bandwidth
+   that caps it near 100 tokens/s, and we measure 60, no matter how fast the math is. Visual: roofline with fp16 at batch 1 pinned to the memory roof.
 2. **Fewer bytes, fused passes.** Three kernels: 4-bit weight matmul (3.8x smaller weights),
    fused RMSNorm + residual add, fused SwiGLU. Visual: the explainer GIF.
 3. **How the 4-bit matmul works.** Packed int32 tile, unpack in registers, scale and zero per
