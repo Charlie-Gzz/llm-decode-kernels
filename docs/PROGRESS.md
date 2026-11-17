@@ -30,7 +30,7 @@
 - GitHub description and 15 topics set; repo made public and Pages enabled (2026-11-12).
 
 ## Next step
-- Nothing pending. All questions in `docs/QUESTIONS.md` are answered.
+- Nothing pending. All open questions are answered.
 
 ## Restart checklist
 1. `python -m modal app list` and stop anything running (`modal app stop -y <id>`).

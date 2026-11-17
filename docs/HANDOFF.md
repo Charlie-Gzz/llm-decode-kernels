@@ -48,13 +48,13 @@ report is lower than the ledger (the ledger rounds up). Ledger:
   run by hand).
 - Docs: `docs/DECISIONS.md` (every judgment call, including method changes after seeing data),
   `docs/TRITON_VS_CUDA.md`, `docs/DEMO_SCRIPT.md`, `docs/SLIDES_OUTLINE.md`,
-  `docs/PORTFOLIO_CARD.md`, `docs/QUESTIONS.md`.
+  `docs/PORTFOLIO_CARD.md`.
 
 **Follow-up (2026-11-12, L4):** quantizing `lm_head` too gives 140.5 tok/s, 2.36x vs fp16 in the
 same container, with perplexity 12.59 (dequant reference 12.59). FP8 for layers and `lm_head`:
 100.5 tok/s (1.69x), perplexity 10.79. Reported next to the headline config in the README.
 
-## Decisions (all answered 2026-11-12, details in `docs/QUESTIONS.md`)
+## Decisions (all answered 2026-11-12)
 1. **Repo public with Pages:** done, with description and topics. History scanned for secrets first.
 2. **Next optimization:** `lm_head` quantized as a follow-up (above).
 3. **AWQ/GPTQ:** kept out of scope. 4. **GPU:** L4 only. 5. **Budget:** unchanged; Volume kept.
